@@ -8,6 +8,6 @@ import Subscribe from './Composite/Subscribe';
 
 export const Defaults = {Reducer, Middleware, Equality, Subscribe};
 export const Composite = parameters => new CompositeClass(parameters);
-export Structure from './Structure';
+export { Structure } from './Structure';
 
 export default {Composite, Structure, Defaults};

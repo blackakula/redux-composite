@@ -131,7 +131,6 @@ module.exports =
 	var Composite = exports.Composite = function Composite(parameters) {
 	  return new _Composite2.default(parameters);
 	};
-	
 	exports.default = { Composite: Composite, Structure: _Structure2.default, Defaults: Defaults };
 
 /***/ }),
