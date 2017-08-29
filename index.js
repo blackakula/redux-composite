@@ -119,6 +119,7 @@ module.exports =
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
+	exports.Structure = undefined;
 	
 	var _Composite = __webpack_require__(/*! ./Composite */ 3);
 	
@@ -126,7 +127,7 @@ module.exports =
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var Structure = function Structure(structure) {
+	var Structure = exports.Structure = function Structure(structure) {
 	  return new _Composite2.default({ structure: structure });
 	};
 	exports.default = Structure;
