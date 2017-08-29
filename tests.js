@@ -92,15 +92,18 @@ module.exports =
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
-	exports.Structure = exports.Composite = exports.Defaults = undefined;
+	exports.Composite = exports.Defaults = undefined;
 	
 	var _Structure = __webpack_require__(/*! ./Structure */ 2);
 	
-	Object.defineProperty(exports, 'Structure', {
-	  enumerable: true,
-	  get: function get() {
-	    return _Structure.Structure;
-	  }
+	Object.keys(_Structure).forEach(function (key) {
+	  if (key === "default" || key === "__esModule") return;
+	  Object.defineProperty(exports, key, {
+	    enumerable: true,
+	    get: function get() {
+	      return _Structure[key];
+	    }
+	  });
 	});
 	
 	var _Composite = __webpack_require__(/*! ./Composite */ 3);
