@@ -78,6 +78,7 @@ module.exports =
 	    (0, _Equality2.default)();
 	    (0, _Subscribe2.default)();
 	};
+	tests();
 	exports.default = tests;
 
 /***/ }),
@@ -395,24 +396,30 @@ module.exports =
 		Object.defineProperty(exports, "__esModule", {
 		  value: true
 		});
-		exports.Walk = exports.Composite = exports.Examples = exports.Defaults = undefined;
+		exports.Examples = exports.Defaults = undefined;
 		
 		var _Composite = __webpack_require__(/*! ./Composite */ 2);
 		
-		Object.defineProperty(exports, 'Composite', {
-		  enumerable: true,
-		  get: function get() {
-		    return _Composite.Composite;
-		  }
+		Object.keys(_Composite).forEach(function (key) {
+		  if (key === "default" || key === "__esModule") return;
+		  Object.defineProperty(exports, key, {
+		    enumerable: true,
+		    get: function get() {
+		      return _Composite[key];
+		    }
+		  });
 		});
 		
 		var _Walk = __webpack_require__(/*! ./Walk */ 4);
 		
-		Object.defineProperty(exports, 'Walk', {
-		  enumerable: true,
-		  get: function get() {
-		    return _Walk.Walk;
-		  }
+		Object.keys(_Walk).forEach(function (key) {
+		  if (key === "default" || key === "__esModule") return;
+		  Object.defineProperty(exports, key, {
+		    enumerable: true,
+		    get: function get() {
+		      return _Walk[key];
+		    }
+		  });
 		});
 		
 		var _KeysMethod = __webpack_require__(/*! ./Default/KeysMethod */ 7);
@@ -1033,8 +1040,6 @@ module.exports =
 	
 	var _index = __webpack_require__(/*! ../index */ 1);
 	
-	var _index2 = _interopRequireDefault(_index);
-	
 	var _expect = __webpack_require__(/*! expect */ 14);
 	
 	var _expect2 = _interopRequireDefault(_expect);
@@ -1078,7 +1083,7 @@ module.exports =
 	};
 	
 	var test = function test() {
-	    var composite = (0, _index2.default)({ toggle: toggle, calc: [increment, calculator] });
+	    var composite = (0, _index.Structure)({ toggle: toggle, calc: [increment, calculator] });
 	    var checker = checkBoth(composite.reducer);
 	    // Init state
 	    checker({ toggle: false, calc: [0, 0] });
@@ -1093,7 +1098,7 @@ module.exports =
 	        calc: [{ type: 'INCREMENT' }]
 	    });
 	
-	    var complex = (0, _index2.default)({ increment: increment, reducer: composite });
+	    var complex = (0, _index.Structure)({ increment: increment, reducer: composite });
 	    checker = checkBoth(complex.reducer);
 	    // Init state
 	    checker({ increment: 0, reducer: { toggle: false, calc: [0, 0] } });

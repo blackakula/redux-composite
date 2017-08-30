@@ -366,24 +366,30 @@ module.exports =
 		Object.defineProperty(exports, "__esModule", {
 		  value: true
 		});
-		exports.Walk = exports.Composite = exports.Examples = exports.Defaults = undefined;
+		exports.Examples = exports.Defaults = undefined;
 		
 		var _Composite = __webpack_require__(/*! ./Composite */ 2);
 		
-		Object.defineProperty(exports, 'Composite', {
-		  enumerable: true,
-		  get: function get() {
-		    return _Composite.Composite;
-		  }
+		Object.keys(_Composite).forEach(function (key) {
+		  if (key === "default" || key === "__esModule") return;
+		  Object.defineProperty(exports, key, {
+		    enumerable: true,
+		    get: function get() {
+		      return _Composite[key];
+		    }
+		  });
 		});
 		
 		var _Walk = __webpack_require__(/*! ./Walk */ 4);
 		
-		Object.defineProperty(exports, 'Walk', {
-		  enumerable: true,
-		  get: function get() {
-		    return _Walk.Walk;
-		  }
+		Object.keys(_Walk).forEach(function (key) {
+		  if (key === "default" || key === "__esModule") return;
+		  Object.defineProperty(exports, key, {
+		    enumerable: true,
+		    get: function get() {
+		      return _Walk[key];
+		    }
+		  });
 		});
 		
 		var _KeysMethod = __webpack_require__(/*! ./Default/KeysMethod */ 7);

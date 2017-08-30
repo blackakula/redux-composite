@@ -9,4 +9,5 @@ const tests = () => {
     TestEquality();
     TestSubscribe();
 };
+tests();
 export default tests;

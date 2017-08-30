@@ -1,4 +1,4 @@
-import Structure from '../index';
+import {Structure} from '../index';
 import expect from 'expect';
 import deepFreeze from 'deep-freeze';
 
