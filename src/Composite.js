@@ -3,11 +3,12 @@ import Reducer from './Composite/Reducer';
 import Middleware from './Composite/Middleware';
 import Equality from './Composite/Equality';
 import Subscribe from './Composite/Subscribe';
+import Redux from './Composite/Redux';
 
 class Composite
 {
     constructor(data) {
-        const {structure, reducer, middleware, equality, subscribe, custom} = data;
+        const {structure, reducer, middleware, equality, subscribe, redux, custom} = data;
         let thisMiddleware = undefined,
             thisSubscribe = undefined;
         if (structure === undefined) {
@@ -20,12 +21,17 @@ class Composite
             thisMiddleware = typeof middleware === 'function'
                 ? middleware
                 : () => next => action => next(action);
-            this.equality = this.equality = typeof equality === 'function'
+            this.equality = typeof equality === 'function'
                 ? equality
                 : (prev, next) => prev === next;
             thisSubscribe = typeof subscribe === 'function'
                 ? subscribe
                 : (dispatch, getState) => listener => () => listener({dispatch, getState});
+            this.redux = typeof redux === 'function'
+                ? redux
+                : (dispatch, getState, subscribe) => ({
+                    redux: {dispatch, getState, subscribe}
+                });
         } else {
             const compositeStructure = WalkComposite({}, true)(
                 leaf => typeof leaf === 'function'
@@ -44,6 +50,9 @@ class Composite
             thisSubscribe = custom === undefined || typeof custom.subscribe !== 'function'
                 ? Subscribe(compositeStructure)
                 : custom.subscribe(compositeStructure);
+            this.redux = custom === undefined || typeof custom.redux !== 'function'
+                ? Redux(compositeStructure)
+                : custom.redux(compositeStructure);
         }
 
         // Middleware wrapper

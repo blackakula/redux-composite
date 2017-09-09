@@ -77,11 +77,25 @@ module.exports =
 	  });
 	});
 	
+	var _Redux = __webpack_require__(/*! ./Redux */ 14);
+	
+	Object.keys(_Redux).forEach(function (key) {
+	  if (key === "default" || key === "__esModule") return;
+	  Object.defineProperty(exports, key, {
+	    enumerable: true,
+	    get: function get() {
+	      return _Redux[key];
+	    }
+	  });
+	});
+	
 	var _Composite = __webpack_require__(/*! ./Composite */ 3);
 	
 	var _Composite2 = _interopRequireDefault(_Composite);
 	
 	var _Structure2 = _interopRequireDefault(_Structure);
+	
+	var _Redux2 = _interopRequireDefault(_Redux);
 	
 	var _Reducer = __webpack_require__(/*! ./Composite/Reducer */ 6);
 	
@@ -105,7 +119,7 @@ module.exports =
 	var Composite = exports.Composite = function Composite(parameters) {
 	  return new _Composite2.default(parameters);
 	};
-	exports.default = { Composite: Composite, Structure: _Structure2.default, Defaults: Defaults };
+	exports.default = { Composite: Composite, Structure: _Structure2.default, Redux: _Redux2.default, Defaults: Defaults };
 
 /***/ }),
 /* 2 */
@@ -165,6 +179,10 @@ module.exports =
 	
 	var _Subscribe2 = _interopRequireDefault(_Subscribe);
 	
+	var _Redux = __webpack_require__(/*! ./Composite/Redux */ 13);
+	
+	var _Redux2 = _interopRequireDefault(_Redux);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -177,6 +195,7 @@ module.exports =
 	        middleware = data.middleware,
 	        equality = data.equality,
 	        subscribe = data.subscribe,
+	        redux = data.redux,
 	        custom = data.custom;
 	
 	    var thisMiddleware = undefined,
@@ -195,7 +214,7 @@ module.exports =
 	                };
 	            };
 	        };
-	        this.equality = this.equality = typeof equality === 'function' ? equality : function (prev, next) {
+	        this.equality = typeof equality === 'function' ? equality : function (prev, next) {
 	            return prev === next;
 	        };
 	        thisSubscribe = typeof subscribe === 'function' ? subscribe : function (dispatch, getState) {
@@ -203,6 +222,11 @@ module.exports =
 	                return function () {
 	                    return listener({ dispatch: dispatch, getState: getState });
 	                };
+	            };
+	        };
+	        this.redux = typeof redux === 'function' ? redux : function (dispatch, getState, subscribe) {
+	            return {
+	                redux: { dispatch: dispatch, getState: getState, subscribe: subscribe }
 	            };
 	        };
 	    } else {
@@ -213,6 +237,7 @@ module.exports =
 	        thisMiddleware = custom === undefined || typeof custom.middleware !== 'function' ? (0, _Middleware2.default)(compositeStructure) : custom.middleware(compositeStructure);
 	        this.equality = custom === undefined || typeof custom.equality !== 'function' ? (0, _Equality2.default)(compositeStructure) : custom.equality(compositeStructure);
 	        thisSubscribe = custom === undefined || typeof custom.subscribe !== 'function' ? (0, _Subscribe2.default)(compositeStructure) : custom.subscribe(compositeStructure);
+	        this.redux = custom === undefined || typeof custom.redux !== 'function' ? (0, _Redux2.default)(compositeStructure) : custom.redux(compositeStructure);
 	    }
 	
 	    // Middleware wrapper
@@ -991,6 +1016,81 @@ module.exports =
 	};
 	
 	exports.default = Subscribe;
+
+/***/ }),
+/* 13 */
+/*!********************************!*\
+  !*** ./src/Composite/Redux.js ***!
+  \********************************/
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _WalkComposite = __webpack_require__(/*! ../Helper/WalkComposite */ 4);
+	
+	var _WalkComposite2 = _interopRequireDefault(_WalkComposite);
+	
+	var _ReduxAction = __webpack_require__(/*! ../Helper/ReduxAction */ 7);
+	
+	var _DefaultMutationMethod = __webpack_require__(/*! ../Helper/DefaultMutationMethod */ 9);
+	
+	var _DefaultMutationMethod2 = _interopRequireDefault(_DefaultMutationMethod);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+	
+	var Redux = function Redux(compositeStructure) {
+	    return function (dispatch, getState, subscribe) {
+	        var redux = { dispatch: dispatch, getState: getState, subscribe: subscribe };
+	        var structure = (0, _WalkComposite2.default)({
+	            mutationMethod: function mutationMethod(key) {
+	                return function (composite, dispatch, getState, subscribe) {
+	                    return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _ReduxAction.MutateMethod)(dispatch, key), function () {
+	                        return getState()[key];
+	                    }, function (listeners) {
+	                        return subscribe(_defineProperty({}, key, listeners));
+	                    }];
+	                };
+	            }
+	        })(function (composite, dispatch, getState, subscribe) {
+	            return composite.redux(dispatch, getState, subscribe);
+	        })(compositeStructure, dispatch, getState, subscribe);
+	        return {
+	            redux: redux,
+	            structure: structure
+	        };
+	    };
+	};
+	
+	exports.default = Redux;
+
+/***/ }),
+/* 14 */
+/*!**********************!*\
+  !*** ./src/Redux.js ***!
+  \**********************/
+/***/ (function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	var Redux = exports.Redux = function Redux(composite) {
+	    return function (_ref) {
+	        var dispatch = _ref.dispatch,
+	            getState = _ref.getState,
+	            subscribe = _ref.subscribe;
+	        return composite.redux(dispatch, getState, composite.subscribe(dispatch, getState, subscribe)).structure;
+	    };
+	};
+	
+	exports.default = Redux;
 
 /***/ })
 /******/ ]);
