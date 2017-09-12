@@ -1,6 +1,6 @@
 {
   "name": "redux-composite",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Redux Composite",
   "jsnext:main": "src/index.js",
   "main": "index.js",
@@ -25,7 +25,9 @@
     "walk-composite": "^0.0.6",
     "redux": "^3.6.0",
     "expect": "^1.20.2",
-    "deep-freeze": "0.0.1"
+    "deep-freeze": "0.0.1",
+    "react": "^15.2.1",
+    "babel-preset-react": "^6.11.1"
   },
   "babel": {
     "presets": [
