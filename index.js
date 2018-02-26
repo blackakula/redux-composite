@@ -264,9 +264,9 @@ module.exports =
 	            var listener = function listener() {
 	                var next = getState();
 	                if (!thisEquality(state, next)) {
+	                    state = next;
 	                    initializedSubscribe();
 	                }
-	                state = next;
 	            };
 	            return typeof subscribe === 'function' ? subscribe(listener) : listener;
 	        };

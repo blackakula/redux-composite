@@ -73,9 +73,9 @@ class Composite
             const listener = () => {
                 const next = getState();
                 if (!thisEquality(state, next)) {
+                    state = next;
                     initializedSubscribe();
                 }
-                state = next;
             };
             return typeof subscribe === 'function' ? subscribe(listener) : listener;
         };
