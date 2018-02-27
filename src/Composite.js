@@ -4,13 +4,15 @@ import Middleware from './Composite/Middleware';
 import Equality from './Composite/Equality';
 import Subscribe from './Composite/Subscribe';
 import Redux from './Composite/Redux';
+import Memoize from './Composite/Memoize';
 
 class Composite
 {
     constructor(data) {
-        const {structure, reducer, middleware, equality, subscribe, redux, custom} = data;
+        const {structure, reducer, middleware, equality, subscribe, redux, memoize, custom} = data;
         let thisMiddleware = undefined,
-            thisSubscribe = undefined;
+            thisSubscribe = undefined,
+            thisMemoize = undefined;
         if (structure === undefined) {
             if (typeof reducer !== 'function') {
                 throw {
@@ -32,6 +34,9 @@ class Composite
                 : (dispatch, getState, subscribe) => ({
                     redux: {dispatch, getState, subscribe}
                 });
+            thisMemoize = typeof memoize === 'function'
+                ? memoize
+                : getState => ({memoize: callback => callback})
         } else {
             const compositeStructure = WalkComposite({}, true)(
                 leaf => typeof leaf === 'function'
@@ -53,6 +58,9 @@ class Composite
             this.redux = custom === undefined || typeof custom.redux !== 'function'
                 ? Redux(compositeStructure)
                 : custom.redux(compositeStructure);
+            thisMemoize = custom === undefined || typeof custom.memoize !== 'function'
+                ? Memoize(compositeStructure)
+                : custom.memoize(compositeStructure);
         }
 
         // Middleware wrapper
@@ -62,8 +70,31 @@ class Composite
                 : thisMiddleware({dispatch, getState})(next)(action);
         };
 
-        // Subscribe wrapper
         const thisEquality = this.equality;
+        // Memoize wrapper
+        this.memoize = getState => {
+            const resolvedMemoize = thisMemoize(getState);
+            return {
+                ...resolvedMemoize,
+                memoize: callback => {
+                    if (callback === undefined) {
+                        return () => {};
+                    }
+                    let state = getState(),
+                        result = undefined;
+                    return (...parameters) => {
+                        const next = getState();
+                        if (result === undefined || !thisEquality(state, next)) {
+                            state = next;
+                            result = resolvedMemoize.memoize(callback)(...parameters);
+                        }
+                        return result;
+                    }
+                }
+            };
+        };
+
+        // Subscribe wrapper
         this.subscribe = (dispatch, getState, subscribe = undefined) => listeners => {
             if (listeners === undefined) {
                 return () => {};

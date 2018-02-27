@@ -77,7 +77,7 @@ module.exports =
 	  });
 	});
 	
-	var _Redux = __webpack_require__(/*! ./Redux */ 14);
+	var _Redux = __webpack_require__(/*! ./Redux */ 15);
 	
 	Object.keys(_Redux).forEach(function (key) {
 	  if (key === "default" || key === "__esModule") return;
@@ -159,6 +159,8 @@ module.exports =
 	    value: true
 	});
 	
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+	
 	var _WalkComposite = __webpack_require__(/*! ./Helper/WalkComposite */ 4);
 	
 	var _WalkComposite2 = _interopRequireDefault(_WalkComposite);
@@ -183,6 +185,10 @@ module.exports =
 	
 	var _Redux2 = _interopRequireDefault(_Redux);
 	
+	var _Memoize = __webpack_require__(/*! ./Composite/Memoize */ 14);
+	
+	var _Memoize2 = _interopRequireDefault(_Memoize);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -196,10 +202,12 @@ module.exports =
 	        equality = data.equality,
 	        subscribe = data.subscribe,
 	        redux = data.redux,
+	        memoize = data.memoize,
 	        custom = data.custom;
 	
 	    var thisMiddleware = undefined,
-	        thisSubscribe = undefined;
+	        thisSubscribe = undefined,
+	        thisMemoize = undefined;
 	    if (structure === undefined) {
 	        if (typeof reducer !== 'function') {
 	            throw {
@@ -229,6 +237,11 @@ module.exports =
 	                redux: { dispatch: dispatch, getState: getState, subscribe: subscribe }
 	            };
 	        };
+	        thisMemoize = typeof memoize === 'function' ? memoize : function (getState) {
+	            return { memoize: function memoize(callback) {
+	                    return callback;
+	                } };
+	        };
 	    } else {
 	        var compositeStructure = (0, _WalkComposite2.default)({}, true)(function (leaf) {
 	            return typeof leaf === 'function' ? new Composite({ reducer: leaf }) : leaf;
@@ -238,6 +251,7 @@ module.exports =
 	        this.equality = custom === undefined || typeof custom.equality !== 'function' ? (0, _Equality2.default)(compositeStructure) : custom.equality(compositeStructure);
 	        thisSubscribe = custom === undefined || typeof custom.subscribe !== 'function' ? (0, _Subscribe2.default)(compositeStructure) : custom.subscribe(compositeStructure);
 	        this.redux = custom === undefined || typeof custom.redux !== 'function' ? (0, _Redux2.default)(compositeStructure) : custom.redux(compositeStructure);
+	        thisMemoize = custom === undefined || typeof custom.memoize !== 'function' ? (0, _Memoize2.default)(compositeStructure) : custom.memoize(compositeStructure);
 	    }
 	
 	    // Middleware wrapper
@@ -251,8 +265,30 @@ module.exports =
 	        };
 	    };
 	
-	    // Subscribe wrapper
 	    var thisEquality = this.equality;
+	    // Memoize wrapper
+	    this.memoize = function (getState) {
+	        var resolvedMemoize = thisMemoize(getState);
+	        return _extends({}, resolvedMemoize, {
+	            memoize: function memoize(callback) {
+	                if (callback === undefined) {
+	                    return function () {};
+	                }
+	                var state = getState(),
+	                    result = undefined;
+	                return function () {
+	                    var next = getState();
+	                    if (result === undefined || !thisEquality(state, next)) {
+	                        state = next;
+	                        result = resolvedMemoize.memoize(callback).apply(undefined, arguments);
+	                    }
+	                    return result;
+	                };
+	            }
+	        });
+	    };
+	
+	    // Subscribe wrapper
 	    this.subscribe = function (dispatch, getState) {
 	        var subscribe = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
 	        return function (listeners) {
@@ -1071,6 +1107,54 @@ module.exports =
 
 /***/ }),
 /* 14 */
+/*!**********************************!*\
+  !*** ./src/Composite/Memoize.js ***!
+  \**********************************/
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _WalkComposite = __webpack_require__(/*! ../Helper/WalkComposite */ 4);
+	
+	var _WalkComposite2 = _interopRequireDefault(_WalkComposite);
+	
+	var _DefaultMutationMethod = __webpack_require__(/*! ../Helper/DefaultMutationMethod */ 9);
+	
+	var _DefaultMutationMethod2 = _interopRequireDefault(_DefaultMutationMethod);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var Memoize = function Memoize(compositeStructure) {
+	    return function (getState) {
+	        var memoize = function memoize(callback) {
+	            return callback;
+	        };
+	        var structure = (0, _WalkComposite2.default)({
+	            mutationMethod: function mutationMethod(key) {
+	                return function (composite, getState) {
+	                    return [(0, _DefaultMutationMethod2.default)(key)(composite), function () {
+	                        return getState()[key];
+	                    }];
+	                };
+	            }
+	        })(function (composite, getState) {
+	            return composite.memoize(getState);
+	        })(compositeStructure, getState);
+	        return {
+	            memoize: memoize,
+	            structure: structure
+	        };
+	    };
+	};
+	
+	exports.default = Memoize;
+
+/***/ }),
+/* 15 */
 /*!**********************!*\
   !*** ./src/Redux.js ***!
   \**********************/

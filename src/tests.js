@@ -3,6 +3,7 @@ import TestMiddleware from './Test/Middleware';
 import TestEquality from './Test/Equality';
 import TestSubscribe from './Test/Subscribe';
 import TestRedux from './Test/Redux';
+import TestMemoize from './Test/Memoize';
 
 const tests = () => {
     TestReducer();
@@ -10,5 +11,6 @@ const tests = () => {
     TestEquality();
     TestSubscribe();
     TestRedux();
+    TestMemoize();
 };
 tests();

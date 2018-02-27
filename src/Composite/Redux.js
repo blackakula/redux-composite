@@ -1,5 +1,5 @@
 import WalkComposite from '../Helper/WalkComposite';
-import {ReduxAction, InitAction, MutateMethod} from '../Helper/ReduxAction';
+import {MutateMethod} from '../Helper/ReduxAction';
 import DefaultMutationMethod from '../Helper/DefaultMutationMethod';
 
 const Redux = compositeStructure => (dispatch, getState, subscribe) => {
