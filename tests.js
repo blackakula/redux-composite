@@ -244,9 +244,64 @@ module.exports =
 	        memoize = data.memoize,
 	        custom = data.custom;
 	
-	    var thisMiddleware = undefined,
-	        thisSubscribe = undefined,
-	        thisMemoize = undefined;
+	    var middlewareWrapper = function middlewareWrapper(middleware) {
+	        return function (_ref) {
+	            var dispatch = _ref.dispatch,
+	                getState = _ref.getState;
+	            return function (next) {
+	                return function (action) {
+	                    return action === undefined ? next(action) : middleware({ dispatch: dispatch, getState: getState })(next)(action);
+	                };
+	            };
+	        };
+	    };
+	    var subscribeWrapper = function subscribeWrapper(originalSubscribe) {
+	        return function (equality) {
+	            return function (dispatch, getState) {
+	                var subscribe = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
+	                return function (listeners) {
+	                    if (listeners === undefined) {
+	                        return function () {};
+	                    }
+	                    var initializedSubscribe = originalSubscribe(dispatch, getState)(listeners);
+	                    var state = getState();
+	                    var listener = function listener() {
+	                        var next = getState();
+	                        if (!equality(state, next)) {
+	                            state = next;
+	                            initializedSubscribe();
+	                        }
+	                    };
+	                    return typeof subscribe === 'function' ? subscribe(listener) : listener;
+	                };
+	            };
+	        };
+	    };
+	    var memoizeWrapper = function memoizeWrapper(originalMemoize) {
+	        return function (equality) {
+	            return function (getState) {
+	                var resolvedMemoize = originalMemoize(getState);
+	                return _extends({}, resolvedMemoize, {
+	                    memoize: function memoize(callback) {
+	                        if (callback === undefined) {
+	                            return function () {};
+	                        }
+	                        var state = getState(),
+	                            result = undefined;
+	                        return function () {
+	                            var next = getState();
+	                            if (result === undefined || !equality(state, next)) {
+	                                state = next;
+	                                result = resolvedMemoize.memoize(callback).apply(undefined, arguments);
+	                            }
+	                            return result;
+	                        };
+	                    }
+	                });
+	            };
+	        };
+	    };
+	
 	    if (structure === undefined) {
 	        if (typeof reducer !== 'function') {
 	            throw {
@@ -254,98 +309,44 @@ module.exports =
 	            };
 	        }
 	        this.reducer = reducer;
-	        thisMiddleware = typeof middleware === 'function' ? middleware : function () {
+	        this.middleware = typeof middleware === 'function' ? middleware : middlewareWrapper(function () {
 	            return function (next) {
 	                return function (action) {
 	                    return next(action);
 	                };
 	            };
-	        };
+	        });
 	        this.equality = typeof equality === 'function' ? equality : function (prev, next) {
 	            return prev === next;
 	        };
-	        thisSubscribe = typeof subscribe === 'function' ? subscribe : function (dispatch, getState) {
+	        this.subscribe = typeof subscribe === 'function' ? subscribe : subscribeWrapper(function (dispatch, getState) {
 	            return function (listener) {
 	                return function () {
 	                    return listener({ dispatch: dispatch, getState: getState });
 	                };
 	            };
-	        };
+	        })(this.equality);
 	        this.redux = typeof redux === 'function' ? redux : function (dispatch, getState, subscribe) {
 	            return {
 	                redux: { dispatch: dispatch, getState: getState, subscribe: subscribe }
 	            };
 	        };
-	        thisMemoize = typeof memoize === 'function' ? memoize : function (getState) {
+	        this.memoize = typeof memoize === 'function' ? memoize : memoizeWrapper(function (getState) {
 	            return { memoize: function memoize(callback) {
 	                    return callback;
 	                } };
-	        };
+	        })(this.equality);
 	    } else {
 	        var compositeStructure = (0, _WalkComposite2.default)({}, true)(function (leaf) {
 	            return typeof leaf === 'function' ? new Composite({ reducer: leaf }) : leaf;
 	        })(structure);
 	        this.reducer = custom === undefined || typeof custom.reducer !== 'function' ? (0, _Reducer2.default)(compositeStructure) : custom.reducer(compositeStructure);
-	        thisMiddleware = custom === undefined || typeof custom.middleware !== 'function' ? (0, _Middleware2.default)(compositeStructure) : custom.middleware(compositeStructure);
+	        this.middleware = custom === undefined || typeof custom.middleware !== 'function' ? middlewareWrapper((0, _Middleware2.default)(compositeStructure)) : custom.middleware(compositeStructure);
 	        this.equality = custom === undefined || typeof custom.equality !== 'function' ? (0, _Equality2.default)(compositeStructure) : custom.equality(compositeStructure);
-	        thisSubscribe = custom === undefined || typeof custom.subscribe !== 'function' ? (0, _Subscribe2.default)(compositeStructure) : custom.subscribe(compositeStructure);
+	        this.subscribe = custom === undefined || typeof custom.subscribe !== 'function' ? subscribeWrapper((0, _Subscribe2.default)(compositeStructure))(this.equality) : custom.subscribe(compositeStructure);
 	        this.redux = custom === undefined || typeof custom.redux !== 'function' ? (0, _Redux2.default)(compositeStructure) : custom.redux(compositeStructure);
-	        thisMemoize = custom === undefined || typeof custom.memoize !== 'function' ? (0, _Memoize2.default)(compositeStructure) : custom.memoize(compositeStructure);
+	        this.memoize = custom === undefined || typeof custom.memoize !== 'function' ? memoizeWrapper((0, _Memoize2.default)(compositeStructure))(this.equality) : custom.memoize(compositeStructure);
 	    }
-	
-	    // Middleware wrapper
-	    this.middleware = function (_ref) {
-	        var dispatch = _ref.dispatch,
-	            getState = _ref.getState;
-	        return function (next) {
-	            return function (action) {
-	                return action === undefined ? next(action) : thisMiddleware({ dispatch: dispatch, getState: getState })(next)(action);
-	            };
-	        };
-	    };
-	
-	    var thisEquality = this.equality;
-	    // Memoize wrapper
-	    this.memoize = function (getState) {
-	        var resolvedMemoize = thisMemoize(getState);
-	        return _extends({}, resolvedMemoize, {
-	            memoize: function memoize(callback) {
-	                if (callback === undefined) {
-	                    return function () {};
-	                }
-	                var state = getState(),
-	                    result = undefined;
-	                return function () {
-	                    var next = getState();
-	                    if (result === undefined || !thisEquality(state, next)) {
-	                        state = next;
-	                        result = resolvedMemoize.memoize(callback).apply(undefined, arguments);
-	                    }
-	                    return result;
-	                };
-	            }
-	        });
-	    };
-	
-	    // Subscribe wrapper
-	    this.subscribe = function (dispatch, getState) {
-	        var subscribe = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
-	        return function (listeners) {
-	            if (listeners === undefined) {
-	                return function () {};
-	            }
-	            var initializedSubscribe = thisSubscribe(dispatch, getState)(listeners);
-	            var state = getState();
-	            var listener = function listener() {
-	                var next = getState();
-	                if (!thisEquality(state, next)) {
-	                    state = next;
-	                    initializedSubscribe();
-	                }
-	            };
-	            return typeof subscribe === 'function' ? subscribe(listener) : listener;
-	        };
-	    };
 	};
 	
 	exports.default = Composite;
