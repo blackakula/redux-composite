@@ -64,4 +64,54 @@ composite3(
 ); // {toggle: false, child: [1, 3]}
 ```
 
-See the [complete reducers code](examples/reducers.js) in examples folder.
+See the [complete reducers.js code](examples/reducers.js) in examples folder.
+
+## State
+
+A transition system actually defines transitions between states. State itself is static - nothing to do with transitions itself.
+Most likely, you'll need to know the current state in the low-level system. But we do not expect the whole high-level state.
+For `toggle` example we expect `getState()` will return us Boolean type. But the high-level system provides only high-level state.
+
+The solution is next:
+
+```javascript
+import {Structure, Redux} from 'redux-composite';
+
+let highLevelState = {toggle: false, inc: [1, 2]};
+const getHighLevelState = () => highLevelState;
+const dummyReducer = () => {};
+
+const composite1 = Structure({
+    toggle: dummyReducer,
+    inc: [dummyReducer, dummyReducer]
+});
+const redux1 = Redux(composite1)({getState: getHighLevelState});
+
+redux1.toggle.redux.getState(); // false
+redux1.inc[0].redux.getState(); // 1
+redux1.inc[1].redux.getState(); // 2
+```
+
+So, now you are able to inject consistent `getState()` methods in low-level components.
+
+When you have nested composites, you can have the `getState()` for each composite:
+
+```javascript
+const composite2 = Structure({
+    toggle: dummyReducer,
+    inc: Structure([dummyReducer, dummyReducer])
+});
+const redux2 = Redux(composite2)({getState: getHighLevelState});
+
+redux2.toggle.redux.getState(); // false
+redux2.inc.redux.getState(); // [1, 2]
+redux2.inc.structure[0].redux.getState(); // 1
+redux2.inc.structure[1].redux.getState(); // 2
+highLevelState.inc[0] = 3;
+redux2.inc.structure[0].redux.getState(); // 3
+```
+
+:exclamation: Even though the library uses same naming as [Redux](https://redux.js.org/), it has no dependency on Redux (except unit tests).
+Same naming conventions just allows out-of-the-box compatibility with Redux as a high-level state management system.
+
+See the [complete state.js code](examples/state.js) in examples folder.
