@@ -113,9 +113,13 @@ module.exports =
 	
 	var _Subscribe2 = _interopRequireDefault(_Subscribe);
 	
+	var _Memoize = __webpack_require__(/*! ./Composite/Memoize */ 14);
+	
+	var _Memoize2 = _interopRequireDefault(_Memoize);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var Defaults = exports.Defaults = { Reducer: _Reducer2.default, Middleware: _Middleware2.default, Equality: _Equality2.default, Subscribe: _Subscribe2.default };
+	var Defaults = exports.Defaults = { Reducer: _Reducer2.default, Middleware: _Middleware2.default, Equality: _Equality2.default, Subscribe: _Subscribe2.default, Memoize: _Memoize2.default };
 	var Composite = exports.Composite = function Composite(parameters) {
 	  return new _Composite2.default(parameters);
 	};
