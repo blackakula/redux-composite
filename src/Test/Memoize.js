@@ -47,6 +47,17 @@ const test = () => {
     expect(memoizeFunction(10, 11)).toEqual(21);
     // not updated!
     expect(memoizeFunctionsStructure.toggle(11, 12)).toEqual(11);
+
+    // change state
+    store.dispatch({type: 'COMPOSITE', composite: {
+        toggle: {type: 'TOGGLE'}
+    }});
+    // re-newed
+    expect(memoizeFunctionsStructure.toggle(12, 13)).toEqual(25);
+    // re-newed
+    expect(memoizeFunction(13, 14)).toEqual(27);
+    // not updated!
+    expect(memoizeFunctionsStructure.calc[0](14, 15)).toEqual(19);
 };
 
 export default test;

@@ -233,6 +233,8 @@ module.exports =
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
 	var Composite = function Composite(data) {
+	    var _this = this;
+	
 	    _classCallCheck(this, Composite);
 	
 	    var structure = data.structure,
@@ -241,112 +243,115 @@ module.exports =
 	        equality = data.equality,
 	        subscribe = data.subscribe,
 	        redux = data.redux,
-	        memoize = data.memoize,
-	        custom = data.custom;
+	        memoize = data.memoize;
 	
-	    var middlewareWrapper = function middlewareWrapper(middleware) {
-	        return function (_ref) {
-	            var dispatch = _ref.dispatch,
-	                getState = _ref.getState;
-	            return function (next) {
-	                return function (action) {
-	                    return action === undefined ? next(action) : middleware({ dispatch: dispatch, getState: getState })(next)(action);
-	                };
+	
+	    if (structure === undefined && typeof reducer !== 'function') {
+	        throw {
+	            message: "Not valid parameters: should be either structure or reducer"
+	        };
+	    }
+	
+	    var compositeStructure = structure === undefined ? undefined : (0, _WalkComposite2.default)({}, true)(function (leaf) {
+	        return typeof leaf === 'function' ? new Composite({ reducer: leaf }) : leaf;
+	    })(structure);
+	
+	    var injection = function injection(parameter, withStructure, withoutStructure, native) {
+	        return typeof parameter === 'function' ? structure === undefined ? parameter : parameter(compositeStructure) : (native === undefined ? function (a) {
+	            return a;
+	        } : native)(structure === undefined ? withoutStructure : withStructure(compositeStructure));
+	    };
+	
+	    this.reducer = injection(reducer, _Reducer2.default);
+	    this.middleware = injection(middleware, _Middleware2.default, function () {
+	        return function (next) {
+	            return function (action) {
+	                return next(action);
 	            };
 	        };
-	    };
-	    var subscribeWrapper = function subscribeWrapper(originalSubscribe) {
-	        return function (equality) {
-	            return function (dispatch, getState) {
-	                var subscribe = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
-	                return function (listeners) {
-	                    if (listeners === undefined) {
-	                        return function () {};
-	                    }
-	                    var initializedSubscribe = originalSubscribe(dispatch, getState)(listeners);
-	                    var state = getState();
-	                    var listener = function listener() {
-	                        var next = getState();
-	                        if (!equality(state, next)) {
-	                            state = next;
-	                            initializedSubscribe();
-	                        }
+	    }, function (middlewareCallback) {
+	        return function (middleware) {
+	            return function (_ref) {
+	                var dispatch = _ref.dispatch,
+	                    getState = _ref.getState;
+	                return function (next) {
+	                    return function (action) {
+	                        return action === undefined ? next(action) : middleware({ dispatch: dispatch, getState: getState })(next)(action);
 	                    };
-	                    return typeof subscribe === 'function' ? subscribe(listener) : listener;
 	                };
 	            };
+	        }(middlewareCallback);
+	    });
+	    this.equality = injection(equality, _Equality2.default, function (prev, next) {
+	        return prev === next;
+	    });
+	    this.subscribe = injection(subscribe, _Subscribe2.default, function (dispatch, getState) {
+	        return function (listener) {
+	            return function () {
+	                return listener({ dispatch: dispatch, getState: getState });
+	            };
 	        };
-	    };
-	    var memoizeWrapper = function memoizeWrapper(originalMemoize) {
-	        return function (equality) {
-	            return function (getState) {
-	                var resolvedMemoize = originalMemoize(getState);
-	                return _extends({}, resolvedMemoize, {
-	                    memoize: function memoize(callback) {
-	                        if (callback === undefined) {
+	    }, function (subscribeCallback) {
+	        return function (originalSubscribe) {
+	            return function (equality) {
+	                return function (dispatch, getState) {
+	                    var subscribe = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
+	                    return function (listeners) {
+	                        if (listeners === undefined) {
 	                            return function () {};
 	                        }
-	                        var state = getState(),
-	                            result = undefined;
-	                        return function () {
+	                        var initializedSubscribe = originalSubscribe(dispatch, getState)(listeners);
+	                        var state = getState();
+	                        var listener = function listener() {
 	                            var next = getState();
-	                            if (result === undefined || !equality(state, next)) {
+	                            if (!equality(state, next)) {
 	                                state = next;
-	                                result = resolvedMemoize.memoize(callback).apply(undefined, arguments);
+	                                initializedSubscribe();
 	                            }
-	                            return result;
 	                        };
-	                    }
-	                });
+	                        return typeof subscribe === 'function' ? subscribe(listener) : listener;
+	                    };
+	                };
 	            };
-	        };
-	    };
+	        }(subscribeCallback)(_this.equality);
+	    });
 	
-	    if (structure === undefined) {
-	        if (typeof reducer !== 'function') {
-	            throw {
-	                message: "Not valid parameters: should be either structure or reducer"
-	            };
-	        }
-	        this.reducer = reducer;
-	        this.middleware = typeof middleware === 'function' ? middleware : middlewareWrapper(function () {
-	            return function (next) {
-	                return function (action) {
-	                    return next(action);
+	    this.redux = injection(redux, _Redux2.default, function (dispatch, getState, subscribe) {
+	        return {
+	            redux: { dispatch: dispatch, getState: getState, subscribe: subscribe }
+	        };
+	    });
+	
+	    this.memoize = injection(memoize, _Memoize2.default, function (getState) {
+	        return { memoize: function memoize(callback) {
+	                return callback;
+	            } };
+	    }, function (memoizeCallback) {
+	        return function (originalMemoize) {
+	            return function (equality) {
+	                return function (getState) {
+	                    var resolvedMemoize = originalMemoize(getState);
+	                    return _extends({}, resolvedMemoize, {
+	                        memoize: function memoize(callback) {
+	                            if (callback === undefined) {
+	                                return function () {};
+	                            }
+	                            var state = getState(),
+	                                result = undefined;
+	                            return function () {
+	                                var next = getState();
+	                                if (result === undefined || !equality(state, next)) {
+	                                    state = next;
+	                                    result = resolvedMemoize.memoize(callback).apply(undefined, arguments);
+	                                }
+	                                return result;
+	                            };
+	                        }
+	                    });
 	                };
 	            };
-	        });
-	        this.equality = typeof equality === 'function' ? equality : function (prev, next) {
-	            return prev === next;
-	        };
-	        this.subscribe = typeof subscribe === 'function' ? subscribe : subscribeWrapper(function (dispatch, getState) {
-	            return function (listener) {
-	                return function () {
-	                    return listener({ dispatch: dispatch, getState: getState });
-	                };
-	            };
-	        })(this.equality);
-	        this.redux = typeof redux === 'function' ? redux : function (dispatch, getState, subscribe) {
-	            return {
-	                redux: { dispatch: dispatch, getState: getState, subscribe: subscribe }
-	            };
-	        };
-	        this.memoize = typeof memoize === 'function' ? memoize : memoizeWrapper(function (getState) {
-	            return { memoize: function memoize(callback) {
-	                    return callback;
-	                } };
-	        })(this.equality);
-	    } else {
-	        var compositeStructure = (0, _WalkComposite2.default)({}, true)(function (leaf) {
-	            return typeof leaf === 'function' ? new Composite({ reducer: leaf }) : leaf;
-	        })(structure);
-	        this.reducer = custom === undefined || typeof custom.reducer !== 'function' ? (0, _Reducer2.default)(compositeStructure) : custom.reducer(compositeStructure);
-	        this.middleware = custom === undefined || typeof custom.middleware !== 'function' ? middlewareWrapper((0, _Middleware2.default)(compositeStructure)) : custom.middleware(compositeStructure);
-	        this.equality = custom === undefined || typeof custom.equality !== 'function' ? (0, _Equality2.default)(compositeStructure) : custom.equality(compositeStructure);
-	        this.subscribe = custom === undefined || typeof custom.subscribe !== 'function' ? subscribeWrapper((0, _Subscribe2.default)(compositeStructure))(this.equality) : custom.subscribe(compositeStructure);
-	        this.redux = custom === undefined || typeof custom.redux !== 'function' ? (0, _Redux2.default)(compositeStructure) : custom.redux(compositeStructure);
-	        this.memoize = custom === undefined || typeof custom.memoize !== 'function' ? memoizeWrapper((0, _Memoize2.default)(compositeStructure))(this.equality) : custom.memoize(compositeStructure);
-	    }
+	        }(memoizeCallback)(_this.equality);
+	    });
 	};
 	
 	exports.default = Composite;
@@ -7419,6 +7424,17 @@ module.exports =
 	    (0, _expect2.default)(memoizeFunction(10, 11)).toEqual(21);
 	    // not updated!
 	    (0, _expect2.default)(memoizeFunctionsStructure.toggle(11, 12)).toEqual(11);
+	
+	    // change state
+	    store.dispatch({ type: 'COMPOSITE', composite: {
+	            toggle: { type: 'TOGGLE' }
+	        } });
+	    // re-newed
+	    (0, _expect2.default)(memoizeFunctionsStructure.toggle(12, 13)).toEqual(25);
+	    // re-newed
+	    (0, _expect2.default)(memoizeFunction(13, 14)).toEqual(27);
+	    // not updated!
+	    (0, _expect2.default)(memoizeFunctionsStructure.calc[0](14, 15)).toEqual(19);
 	};
 	
 	exports.default = test;
