@@ -298,9 +298,6 @@ module.exports =
 	                    var resolvedMemoize = originalMemoize(getState);
 	                    return _extends({}, resolvedMemoize, {
 	                        memoize: function memoize(callback) {
-	                            if (callback === undefined) {
-	                                return function () {};
-	                            }
 	                            var state = getState(),
 	                                result = undefined;
 	                            return function () {

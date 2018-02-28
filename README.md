@@ -2,6 +2,15 @@
 
 Composing high-level [Labelled transition system](https://en.wikipedia.org/wiki/Transition_system) from small ones.
 
+### Table of contents
+1. [Transitions (Reducers)](README.md#transitions-reducers)
+2. [State](README.md#state)
+3. [Dispatch](README.md#dispatch)
+4. [Subscribe listeners](README.md#subscribe-listeners)
+5. [Middleware](README.md#middleware)
+6. [Memoize](README.md#memoize)
+7. [Injections](README.md#injections)
+
 ## Transitions (Reducers)
 
 In next example you have 2 low-level transitions defined:
@@ -92,7 +101,7 @@ redux1.inc[0].redux.getState(); // 1
 redux1.inc[1].redux.getState(); // 2
 ```
 
-So, now you are able to inject consistent `getState()` methods in low-level components.
+So, now you are able to inject consistent `getState()` methods in low-level system.
 
 When you have nested composites, you can have the `getState()` for each composite:
 
@@ -120,7 +129,7 @@ See the [complete state.js code](examples/state.js) in examples folder.
 
 Are you immutable? Than probably you don't use ~~`setState()`~~ in your code.
 Having single global state of application in a labelled transition system, most likely we also have `dispatch()` method to make transitions of the global state.
-Low-level component doesn't know labels ("actions") for the global state. How to inject the consistent `dispatch()` method to the low-level component?
+Low-level system doesn't know labels ("actions") and structure of the global state. How to inject the consistent `dispatch()` method to the low-level system?
 Assuming high-level reducer is implemented as a composite, than the high-level `dispatch()` method should use composite reducer, like in next example:
 
 ```javascript
@@ -160,3 +169,81 @@ redux2.child.structure[0].redux.dispatch({type: 'INCREMENT'}); // highLevelState
 ```
 
 See the [complete dispatch.js code](examples/dispatch.js) in examples folder.
+
+## Subscribe listeners
+
+When the state is changed you may want to execute some callbacks. By default, every global state change trigger all subscribed listeners.
+But if we want to subscribe on low-level state changes, we want to track only these low-level state changes.
+Therefore `subscribe()` implementation hardly depends on `getState()` and the equality check between two states.
+> By default, equality check is just `(prev, next) => prev === next`, but it's possible to inject your own (see in section [Injections](README.md#injections)).
+
+Let's assume you have high-level composite:
+
+```javascript
+const composite = Structure({toggle, inc});
+```
+
+Let's define high-level `subscribe()`, `getState()` and `dispatch()` next way:
+
+```javascript
+let highLevelState = {toggle: false, inc: 1};
+const getHighLevelState = () => highLevelState;
+
+let listeners = [];
+const highLevelSubscribe = listener => listeners.push(listener);
+
+const highLevelDispatch = action => {
+    const newState = composite.reducer(highLevelState, action);
+    if (newState !== highLevelState) {
+        highLevelState = newState;
+        listeners.map(listener => listener());
+    }
+};
+```
+
+There are 2 different ways to subscribe for the low-level state changes - and they are totally equivalent.
+First way is consistent with the low-level system, therefore could be injected into low-level system as a callback:
+
+```javascript
+const redux = Redux(composite)({
+    getState: getHighLevelState,
+    subscribe: highLevelSubscribe,
+    dispatch: highLevelDispatch
+});
+
+let counter = 0;
+redux.toggle.redux.subscribe(({getState, dispatch}) => {
+    if (getState()) {
+        dispatch({type: 'TOGGLE'});
+    }
+    counter += 1;
+});
+```
+
+Second way is not consistent with low-level system and may be used to communicate low-level systems together.
+And this way you can subscribe listeners on several low-level state changes at the same time:
+
+```javascript
+composite.subscribe(highLevelDispatch, getHighLevelState, highLevelSubscribe)({
+    toggle: ({getState, dispatch}) => {
+        if (!getState()) {
+            highLevelDispatch({type: 'COMPOSITE', composite: {inc: {type: 'INCREMENT'}}})
+        }
+    },
+    inc: ({getState, dispatch}) => {
+        if (getState() % 2 === 0) {
+            highLevelDispatch({type: 'COMPOSITE', composite: {toggle: {type: 'TOGGLE'}}});
+        }
+    }
+});
+```
+
+If the high-level `subscribe()` method returns unsubscribe callback, than the low-level subscriptions do the same.
+
+See the [complete subscribe.js code](examples/subscribe.js) in examples folder.
+
+## Middleware
+
+## Memoize
+
+## Injections
