@@ -25,7 +25,8 @@
     "walk-composite": "^0.0.6",
     "redux": "^3.6.0",
     "expect": "^1.20.2",
-    "deep-freeze": "0.0.1"
+    "deep-freeze": "^0.0.1",
+    "redux-thunk": "^2.2.0"
   },
   "babel": {
     "presets": [

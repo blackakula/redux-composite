@@ -250,8 +250,6 @@ It can't be done within reducer function, because reducer has no access to `disp
 Listeners are executed usually after the transition happened, and they don't receive the "action".
 The same idea, we need to have high-level system middleware, based on low-level systems middlewares.
 
-:exclamation: Right now it's supported only `getState` and `dispatch` properties for composite middleware.
-
 Let's assume we have middlewares for our `toggle` and `inc` reducers:
 
 ```javascript
@@ -282,7 +280,7 @@ const composite = Structure({
 Here we can see an example of middleware [injection](README.md#injections).
 When low-level system has no specific middleware, the default one is provided (which resolves in `next(action)`).
 For low-level system the expression `Composite({reducer})` is the same as just `reducer`, because high-level composite resolves low-level reducers to `Composite` objects.
-High-level composite object is also `Composite` object, because `Structure(data)` is identical to `Composite({structure: data})`. More details on this in the [Injection](README.md#injections) section.
+High-level composite object is also `Composite` object, because `Structure(data)` is identical to `Composite({structure: data})`. More details on this in the [Injections](README.md#injections) section.
 
 Let's declare high-level `getState()` and `dispatch()` and make sure, that low-level middlewares are executed through the high-level one:
 
@@ -301,6 +299,13 @@ composite.middleware({dispatch: highLevelDispatch, getState: getHighLevelState})
     }
 }); // highLevelState is {toggle: true, inc: 3}
 ```
+
+You want to use [Redux Thunk](https://github.com/gaearon/redux-thunk) in your low-level system?
+No problem - just [inject thunk](src/Test/ReduxThunk.js) as a middleware for low-level `Composite` object.
+
+:muscle: This way allows us to provide middleware together with reducer for low-level system.
+And keeps low-level system independent from the global state structure and re-usable in different high-level systems.
+Your low-level system may provide other injectable entities together with reducer (and middleware) - see [Injections](README.md#injections) section for details.
 
 See the [complete middleware.js code](examples/middleware.js) in examples folder.
 

@@ -74,6 +74,10 @@ module.exports =
 	
 	var _Memoize2 = _interopRequireDefault(_Memoize);
 	
+	var _ReduxThunk = __webpack_require__(/*! ./Test/ReduxThunk */ 76);
+	
+	var _ReduxThunk2 = _interopRequireDefault(_ReduxThunk);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var tests = function tests() {
@@ -83,6 +87,7 @@ module.exports =
 	    (0, _Subscribe2.default)();
 	    (0, _Redux2.default)();
 	    (0, _Memoize2.default)();
+	    (0, _ReduxThunk2.default)();
 	};
 	tests();
 
@@ -7440,6 +7445,110 @@ module.exports =
 	};
 	
 	exports.default = test;
+
+/***/ }),
+/* 76 */
+/*!********************************!*\
+  !*** ./src/Test/ReduxThunk.js ***!
+  \********************************/
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _redux = __webpack_require__(/*! redux */ 51);
+	
+	var _Reducer = __webpack_require__(/*! ./Reducer */ 16);
+	
+	var _index = __webpack_require__(/*! ../index */ 1);
+	
+	var _reduxThunk = __webpack_require__(/*! redux-thunk */ 77);
+	
+	var _reduxThunk2 = _interopRequireDefault(_reduxThunk);
+	
+	var _expect = __webpack_require__(/*! expect */ 17);
+	
+	var _expect2 = _interopRequireDefault(_expect);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var calculatorThunkActor = function calculatorThunkActor() {
+	    return function (dispatch, getState) {
+	        if (getState() % 2 === 0) {
+	            dispatch({ type: 'DECREMENT', value: 1 });
+	        }
+	    };
+	};
+	
+	var test = function test() {
+	    var composite = (0, _index.Structure)({
+	        toggle: _Reducer.toggle,
+	        calc: [_Reducer.increment, (0, _index.Composite)({ reducer: _Reducer.calculator, middleware: _reduxThunk2.default })]
+	    });
+	    var store = (0, _redux.createStore)(composite.reducer, { toggle: false, calc: [1, 2] }, (0, _redux.applyMiddleware)(composite.middleware));
+	    store.dispatch({ type: 'COMPOSITE', composite: { calc: [undefined, calculatorThunkActor()] } });
+	    (0, _expect2.default)(store.getState()).toEqual({ toggle: false, calc: [1, 1] });
+	    store.dispatch({ type: 'COMPOSITE', composite: { calc: [undefined, calculatorThunkActor()] } });
+	    (0, _expect2.default)(store.getState()).toEqual({ toggle: false, calc: [1, 1] });
+	
+	    var complex = (0, _index.Structure)({
+	        increment: _Reducer.increment,
+	        reducer: composite
+	    });
+	    var complexStore = (0, _redux.createStore)(complex.reducer, { increment: 1, reducer: { toggle: false, calc: [1, 2] } }, (0, _redux.applyMiddleware)(complex.middleware));
+	    complexStore.dispatch({
+	        type: 'COMPOSITE',
+	        composite: {
+	            increment: { type: 'INCREMENT' },
+	            reducer: {
+	                toggle: { type: 'TOGGLE' },
+	                calc: [{ type: 'INCREMENT' }, calculatorThunkActor()]
+	            }
+	        }
+	    });
+	    (0, _expect2.default)(complexStore.getState()).toEqual({
+	        increment: 2,
+	        reducer: {
+	            toggle: true,
+	            calc: [2, 1]
+	        }
+	    });
+	};
+	exports.default = test;
+
+/***/ }),
+/* 77 */
+/*!************************************!*\
+  !*** ./~/redux-thunk/lib/index.js ***!
+  \************************************/
+/***/ (function(module, exports) {
+
+	'use strict';
+	
+	exports.__esModule = true;
+	function createThunkMiddleware(extraArgument) {
+	  return function (_ref) {
+	    var dispatch = _ref.dispatch,
+	        getState = _ref.getState;
+	    return function (next) {
+	      return function (action) {
+	        if (typeof action === 'function') {
+	          return action(dispatch, getState, extraArgument);
+	        }
+	
+	        return next(action);
+	      };
+	    };
+	  };
+	}
+	
+	var thunk = createThunkMiddleware();
+	thunk.withExtraArgument = createThunkMiddleware;
+	
+	exports['default'] = thunk;
 
 /***/ })
 /******/ ]);
