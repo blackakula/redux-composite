@@ -33,12 +33,12 @@ redux.toggle.redux.subscribe(({getState, dispatch}) => {
 });
 
 composite.subscribe(highLevelDispatch, getHighLevelState, highLevelSubscribe)({
-    toggle: ({getState}) => {
+    toggle: ({getState, dispatch}) => {
         if (!getState()) {
             highLevelDispatch({type: 'COMPOSITE', composite: {inc: {type: 'INCREMENT'}}})
         }
     },
-    inc: ({getState}) => {
+    inc: ({getState, dispatch}) => {
         if (getState() % 2 === 0) {
             highLevelDispatch({type: 'COMPOSITE', composite: {toggle: {type: 'TOGGLE'}}});
         }

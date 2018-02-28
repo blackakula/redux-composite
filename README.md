@@ -220,7 +220,7 @@ redux.toggle.redux.subscribe(({getState, dispatch}) => {
 });
 ```
 
-Second way is not consistent with low-level system and may be used to communicate low-level systems together.
+Second way is not consistent with low-level system and may be used to communicate low-level systems with each other.
 And this way you can subscribe listeners on several low-level state changes at the same time:
 
 ```javascript
@@ -238,11 +238,71 @@ composite.subscribe(highLevelDispatch, getHighLevelState, highLevelSubscribe)({
 });
 ```
 
-If the high-level `subscribe()` method returns unsubscribe callback, than the low-level subscriptions do the same.
+If the high-level `subscribe()` method returns unsubscribe callback, than the low-level subscriptions and the composite `subscribe()` do the same.
 
 See the [complete subscribe.js code](examples/subscribe.js) in examples folder.
 
 ## Middleware
+
+The main idea of middleware is to intercept the transition.
+Before the system reach new state we may need to do some "side-effects" in the middle, using current state, transition label ("action") and `dispatch()` function
+It can't be done within reducer function, because reducer has no access to `dispatch()`.
+Listeners are executed usually after the transition happened, and they don't receive the "action".
+The same idea, we need to have high-level system middleware, based on low-level systems middlewares.
+
+:exclamation: Right now it's supported only `getState` and `dispatch` properties for composite middleware.
+
+Let's assume we have middlewares for our `toggle` and `inc` reducers:
+
+```javascript
+const toggleMiddleware = ({dispatch, getState}) => next => action => {
+    if (!getState() && action.type !== 'TOGGLE') {
+        return next({type: 'TOGGLE'});
+    }
+    return next(action);
+};
+const incMiddleware = ({dispatch, getState}) => next => action => {
+    const result = next(action);
+    if (getState() % 2 === 0) {
+        return dispatch({type: 'INCREMENT'});
+    }
+    return result;
+};
+```
+
+Now we need to declare, that these middlewares are parts of low-level systems:
+
+```javascript
+const composite = Structure({
+    toggle: Composite({reducer: toggle, middleware: toggleMiddleware}),
+    inc: Composite({reducer: inc, middleware: incMiddleware})
+});
+```
+
+Here we can see an example of middleware [injection](README.md#injections).
+When low-level system has no specific middleware, the default one is provided (which resolves in `next(action)`).
+For low-level system the expression `Composite({reducer})` is the same as just `reducer`, because high-level composite resolves low-level reducers to `Composite` objects.
+High-level composite object is also `Composite` object, because `Structure(data)` is identical to `Composite({structure: data})`. More details on this in the [Injection](README.md#injections) section.
+
+Let's declare high-level `getState()` and `dispatch()` and make sure, that low-level middlewares are executed through the high-level one:
+
+```javascript
+let highLevelState = {toggle: false, inc: 1};
+const getHighLevelState = () => highLevelState;
+const highLevelDispatch = action => {
+    return highLevelState = composite.reducer(highLevelState, action);
+};
+
+composite.middleware({dispatch: highLevelDispatch, getState: getHighLevelState})(highLevelDispatch)({
+    type: 'COMPOSITE',
+    composite: {
+        toggle: {type: 'SOMETHING_ELSE'},
+        inc: {type: 'INCREMENT'}
+    }
+}); // highLevelState is {toggle: true, inc: 3}
+```
+
+See the [complete middleware.js code](examples/middleware.js) in examples folder.
 
 ## Memoize
 

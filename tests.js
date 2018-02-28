@@ -7273,11 +7273,13 @@ module.exports =
 	    structure.toggle.redux.subscribe(function () {
 	        return ++toggled;
 	    });
-	    structure.calc[0].redux.subscribe(function () {
-	        return sum[0] += structure.calc[0].redux.getState();
+	    structure.calc[0].redux.subscribe(function (_ref) {
+	        var getState = _ref.getState;
+	        return sum[0] += getState();
 	    });
-	    structure.calc[1].redux.subscribe(function () {
-	        return sum[1] += structure.calc[1].redux.getState();
+	    structure.calc[1].redux.subscribe(function (_ref2) {
+	        var getState = _ref2.getState;
+	        return sum[1] += getState();
 	    });
 	    // remember the last state: {toggle: true, calc: [1, -2]}
 	    store.dispatch({ type: 'COMPOSITE', composite: {
@@ -7320,17 +7322,20 @@ module.exports =
 	
 	    // check subscribe
 	    var squares = 0;
-	    structure.increment.redux.subscribe(function () {
-	        return squares += structure.increment.redux.getState() * structure.increment.redux.getState();
+	    structure.increment.redux.subscribe(function (_ref3) {
+	        var getState = _ref3.getState;
+	        return squares += getState() * getState();
 	    });
 	    structure.reducer.structure.toggle.redux.subscribe(function () {
 	        return ++toggled;
 	    });
-	    structure.reducer.structure.calc[0].redux.subscribe(function () {
-	        return sum[0] += structure.reducer.structure.calc[0].redux.getState();
+	    structure.reducer.structure.calc[0].redux.subscribe(function (_ref4) {
+	        var getState = _ref4.getState;
+	        return sum[0] += getState();
 	    });
-	    structure.reducer.structure.calc[1].redux.subscribe(function () {
-	        return sum[1] += structure.reducer.structure.calc[1].redux.getState();
+	    structure.reducer.structure.calc[1].redux.subscribe(function (_ref5) {
+	        var getState = _ref5.getState;
+	        return sum[1] += getState();
 	    });
 	    // remember the last state: {increment: 3, reducer: {toggle: true, calc: [1, -2]}}
 	    complexStore.dispatch({ type: 'COMPOSITE', composite: {

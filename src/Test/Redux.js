@@ -36,8 +36,8 @@ const test = () => {
     let toggled = 0;
     let sum = [0, 0];
     structure.toggle.redux.subscribe(() => ++toggled);
-    structure.calc[0].redux.subscribe(() => sum[0] += structure.calc[0].redux.getState());
-    structure.calc[1].redux.subscribe(() => sum[1] += structure.calc[1].redux.getState());
+    structure.calc[0].redux.subscribe(({getState}) => sum[0] += getState());
+    structure.calc[1].redux.subscribe(({getState}) => sum[1] += getState());
     // remember the last state: {toggle: true, calc: [1, -2]}
     store.dispatch({type: 'COMPOSITE', composite: {
         toggle: {type: 'TOGGLE'},
@@ -83,10 +83,10 @@ const test = () => {
 
     // check subscribe
     let squares = 0;
-    structure.increment.redux.subscribe(() => squares += structure.increment.redux.getState() * structure.increment.redux.getState());
+    structure.increment.redux.subscribe(({getState}) => squares += getState() * getState());
     structure.reducer.structure.toggle.redux.subscribe(() => ++toggled);
-    structure.reducer.structure.calc[0].redux.subscribe(() => sum[0] += structure.reducer.structure.calc[0].redux.getState());
-    structure.reducer.structure.calc[1].redux.subscribe(() => sum[1] += structure.reducer.structure.calc[1].redux.getState());
+    structure.reducer.structure.calc[0].redux.subscribe(({getState}) => sum[0] += getState());
+    structure.reducer.structure.calc[1].redux.subscribe(({getState}) => sum[1] += getState());
     // remember the last state: {increment: 3, reducer: {toggle: true, calc: [1, -2]}}
     complexStore.dispatch({type: 'COMPOSITE', composite: {
         increment: {type: 'INCREMENT'},
