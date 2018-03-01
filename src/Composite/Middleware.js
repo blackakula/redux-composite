@@ -25,13 +25,15 @@ const Middleware = compositeStructure => ({dispatch, getState}) => {
             InitAction(next),
             initMiddleware
         );
-        return action => WalkComposite()(
-            (composite, next, action) => action === undefined ? undefined : next(action)
-        )(
-            compositeStructure,
-            initNextMiddleware,
-            ReduxAction(action)
-        );
+        return action => action === undefined
+            ? next(action)
+            : WalkComposite()(
+                (composite, next, action) => action === undefined ? undefined : next(action)
+            )(
+                compositeStructure,
+                initNextMiddleware,
+                ReduxAction(action)
+            );
     };
 };
 

@@ -5,6 +5,7 @@ const WalkComposite = (parameters = {}, allowFunction = false) => Walk({
     leafCondition: (data) => {
         const isLeaf = Defaults.LeafCondition(data);
         if (!(data instanceof Composite) && isLeaf && (!allowFunction || typeof data !== 'function')) {
+            console.trace();
             throw {
                 message: "Structure leafs could be only instance of Composite or reducer function"
             };

@@ -1,4 +1,4 @@
-import CompositeClass from './Composite';
+import CompositeClass, {Wrappers} from './Composite';
 import Structure from './Structure';
 import Redux from './Redux';
 
@@ -14,4 +14,4 @@ export const Composite = parameters => new CompositeClass(parameters);
 export * from './Structure';
 export * from './Redux';
 
-export default {Composite, Structure, Redux, Defaults};
+export default {Composite, Structure, Redux, Defaults, Wrappers};

@@ -6,6 +6,44 @@ import Subscribe from './Composite/Subscribe';
 import Redux from './Composite/Redux';
 import Memoize from './Composite/Memoize';
 
+const defaultEquality = (prev, next) => prev === next;
+
+export const Wrappers = {
+    Subscribe: (originalSubscribe, equality) => (dispatch, getState, subscribe = undefined) => listeners => {
+        if (listeners === undefined) {
+            return () => {};
+        }
+        const initializedSubscribe = originalSubscribe(dispatch, getState)(listeners);
+        let state = getState();
+        const listener = () => {
+            const next = getState();
+            if (!(equality === undefined ? defaultEquality : equality)(state, next)) {
+                state = next;
+                initializedSubscribe();
+            }
+        };
+        return typeof subscribe === 'function' ? subscribe(listener) : listener;
+    },
+    Memoize: (originalMemoize, equality) => getState => {
+        const resolvedMemoize = originalMemoize(getState);
+        return {
+            ...resolvedMemoize,
+            memoize: callback => {
+                let state = undefined,
+                    result = undefined;
+                return (...parameters) => {
+                    const next = getState();
+                    if (!(equality === undefined ? defaultEquality : equality)(state, next)) {
+                        state = next;
+                        result = resolvedMemoize.memoize(callback)(...parameters);
+                    }
+                    return result;
+                }
+            }
+        };
+    }
+};
+
 class Composite
 {
     constructor(data) {
@@ -25,47 +63,34 @@ class Composite
                     : leaf
             )(structure);
 
-        const injection = (parameter, withStructure, withoutStructure, native) => typeof parameter === 'function'
-            ? (structure === undefined ? parameter : parameter(compositeStructure))
-            : (native === undefined ? a => a : native)(
-                structure === undefined
-                    ? withoutStructure
-                    : withStructure(compositeStructure)
-            );
+        const injection = (parameter, withStructure, withoutStructure, wrapper) => {
+            if (typeof parameter === 'function') {
+                return structure === undefined
+                    ? parameter
+                    : parameter(compositeStructure)
+            }
+            const beforeWrapper = structure === undefined
+                ? withoutStructure
+                : withStructure(compositeStructure);
+            return wrapper === undefined ? beforeWrapper : wrapper(beforeWrapper);
+        };
 
         this.reducer = injection(reducer, Reducer);
         this.middleware = injection(
             middleware,
             Middleware,
-            () => next => action => next(action),
-            middlewareCallback => (middleware => ({dispatch, getState}) => next => action => action === undefined
-                ? next(action)
-                : middleware({dispatch, getState})(next)(action))(middlewareCallback)
+            () => next => action => next(action)
         );
         this.equality = injection(
             equality,
             Equality,
-            (prev, next) => prev === next
+            defaultEquality
         );
         this.subscribe = injection(
             subscribe,
             Subscribe,
             (dispatch, getState) => listener => () => listener({dispatch, getState}),
-            subscribeCallback => (originalSubscribe => equality => (dispatch, getState, subscribe = undefined) => listeners => {
-                if (listeners === undefined) {
-                    return () => {};
-                }
-                const initializedSubscribe = originalSubscribe(dispatch, getState)(listeners);
-                let state = getState();
-                const listener = () => {
-                    const next = getState();
-                    if (!equality(state, next)) {
-                        state = next;
-                        initializedSubscribe();
-                    }
-                };
-                return typeof subscribe === 'function' ? subscribe(listener) : listener;
-            })(subscribeCallback)(this.equality)
+            (equality => originalSubscriber => Wrappers.Subscribe(originalSubscriber, equality))(this.equality)
         );
 
         this.redux = injection(
@@ -80,24 +105,7 @@ class Composite
             memoize,
             Memoize,
             getState => ({memoize: callback => callback}),
-            memoizeCallback => (originalMemoize => equality => getState => {
-                const resolvedMemoize = originalMemoize(getState);
-                return {
-                    ...resolvedMemoize,
-                    memoize: callback => {
-                        let state = undefined,
-                            result = undefined;
-                        return (...parameters) => {
-                            const next = getState();
-                            if (!equality(state, next)) {
-                                state = next;
-                                result = resolvedMemoize.memoize(callback)(...parameters);
-                            }
-                            return result;
-                        }
-                    }
-                };
-            })(memoizeCallback)(this.equality)
+            (equality => originalMemoize => Wrappers.Memoize(originalMemoize, equality))(this.equality)
         );
     }
 }

@@ -432,22 +432,23 @@ For examples check [Middleware](README.md#middleware) section.
 
 #### Equality
 
-Default: `(prev, next) => prev === next`
+Default: `(prev, next) => prev === next` - let's call it "default equality"
 
 If you have more complex equality check between previous and next state, inject your own implementation:
 `type Equality = (prev: State, next: State): boolean`
 
 #### Subscribe
 
-Default (simplified): `(dispatch, getState) => listener => () => listener({dispatch, getState})`
+Default: `Wrappers.Subscribe((dispatch, getState) => listener => () => listener({dispatch, getState}), equality)`
 
 If you want additional custom behavior on all subscribed listeners to you low-level state changes, inject it using this interface:
 ```javascript
 type Subscribe = (dispatch: (action: Action) => Action, getState: () => State): (Function => () => any)
 ```
 
-The default implementation also checks the stage changes based on the provided equality.
-If you provide your own injection, you should implement (or disregard) your own state changes check.
+`Wrappers.Subscribe` (based on given equality) checks the state changes and execute listener only in case, when state was changed.
+So, you may also want to wrap your subscribe injection with `Wrappers.Subscribe`
+> If equality is not provided, default equality will be used
 
 #### Redux
 
@@ -473,13 +474,14 @@ type Redux = (
 
 #### Memoize
 
-Default (simplified): `getState => ({memoize: callback => callback})`
+Default: `Wrappers.Memoize(getState => ({memoize: callback => callback}), equality)`
 
 You're free to implement your own, using the interface:
 `memoize(getState: () => State): {memoize: Function => Function}`
 
-The default implementation checks the stage changes based on the provided equality and caches result of the callback.
-If you provide your own injection, you should implement (or disregard) your own state changes check and caching mechanism.
+`Wrappers.Memoize` (based on given equality) checks the stage changes and caches result of the callback.
+So, you may also want to wrap your memoize injection with `Wrappers.Memoize`
+> If equality is not provided, default equality will be used
 
 ### Composite injections
 
@@ -501,8 +503,6 @@ Interface: `(structure: mixed): Reducer`
 
 Default: `Defaults.Middleware`
 
-There is a wrapper on default implementation, that checks, that composite action has sub-action for sub-component
-
 Interface: `(structure: mixed): Middleware`
 
 
@@ -514,10 +514,11 @@ Interface: `(structure: mixed): Equality`
 
 #### Subscribe
 
-Default: `Defaults.Subscribe`
+Default: `structure => Wrappers.Subscribe(Defaults.Subscribe(structure), equality)`
 
-There is a wrapper on the default implementation, that also checks the stage changes based on the provided equality.
-If you provide your own injection, you should implement (or disregard) your own state changes check.
+`Wrappers.Subscribe` (based on given equality) checks the state changes and execute listener only in case, when state was changed.
+So, you may also want to wrap your subscribe injection with `Wrappers.Subscribe` the same way as `Defaults.Subscribe`
+> If equality is not provided, default equality will be used
 
 Interface: `(structure: mixed): Subscribe`
 
@@ -529,9 +530,10 @@ Interface: `(structure: mixed): Redux`
 
 #### Memoize
 
-Default: `Defaults.Memoize`
+Default: `structure => Wrappers.Memoize(Defaults.Memoize(structure), equality)`
 
-There is a wrapper on the default implementation, that checks the stage changes based on the provided equality and caches result of the callback.
-If you provide your own injection, you should implement (or disregard) your own state changes check and caching mechanism.
+`Wrappers.Memoize` (based on given equality) checks the stage changes and caches result of the callback.
+So, you may also want to wrap your memoize injection with `Wrappers.Memoize` the same way as `Defaults.Memoize`
+> If equality is not provided, default equality will be used
 
 Interface: `(structure: mixed): Memoize`
