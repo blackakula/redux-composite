@@ -1,6 +1,6 @@
 {
   "name": "redux-composite",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "description": "Redux Composite",
   "jsnext:main": "src/index.js",
   "main": "index.js",
