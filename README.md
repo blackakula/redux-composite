@@ -2,6 +2,10 @@
 
 Composing high-level [Labelled transition system](https://en.wikipedia.org/wiki/Transition_system) from small ones.
 
+:white_check_mark:
+The library allows low-level system implementations being independent from the high-level system structure.
+This way low-level systems could be re-usable in different high-level systems.
+
 ### Table of contents
 1. [Transitions (Reducers)](README.md#transitions-reducers)
 2. [State](README.md#state)
@@ -303,12 +307,77 @@ composite.middleware({dispatch: highLevelDispatch, getState: getHighLevelState})
 You want to use [Redux Thunk](https://github.com/gaearon/redux-thunk) in your low-level system?
 No problem - just [inject thunk](src/Test/ReduxThunk.js) as a middleware for low-level `Composite` object.
 
-:muscle: This way allows us to provide middleware together with reducer for low-level system.
+#### :white_check_mark: Modularity
+
+This way allows us to provide middleware together with reducer for low-level system.
 And keeps low-level system independent from the global state structure and re-usable in different high-level systems.
 Your low-level system may provide other injectable entities together with reducer (and middleware) - see [Injections](README.md#injections) section for details.
 
 See the [complete middleware.js code](examples/middleware.js) in examples folder.
 
 ## Memoize
+
+This is useful in case, when you know, that result of your function will not change, if the state was not changed.
+For this purpose you need to compare previous and next states, therefore `memoize()` implementation hardly depends on `getState()` and the equality check between two states.
+Let's assume we have next high-level system:
+
+```javascript
+let highLevelState = {toggle: false, inc: 1};
+const getHighLevelState = () => highLevelState;
+
+const composite = Structure({
+    toggle: toggle,
+    inc: inc
+});
+const highLevelDispatch = action => {
+    return highLevelState = composite.reducer(highLevelState, action);
+};
+```
+
+And we have the heavy function:
+
+```javascript
+const experimentalFunction = () => (start => {
+    // heavy calculation
+    while (new Date().getTime() < start + 1500);
+    return start;
+})(new Date().getTime());
+```
+
+We want to cache result of this function (depends on state).
+Let's initialize our memoize (remember, it depends on high-level `getState()`)
+
+```javascript
+const memoizeInit = composite.memoize(getHighLevelState);
+```
+
+And now we have memoize initialized for all low-level states and for high-level as well:
+
+```javascript
+const memoizedComposite = memoizeInit.memoize(experimentalFunction);
+const memoizedToggle = memoizeInit.structure.toggle.memoize(experimentalFunction);
+```
+
+Calculate initial results of the functions. This time `experimentalFunction()` would be calculated for both:
+
+```javascript
+memoizedComposite();
+memoizedToggle();
+```
+
+Let's dispatch an action, that will not change toggle state and check results of our heavy function:
+
+```javascript
+highLevelDispatch({type: 'COMPOSITE', composite: {
+    inc: {type: 'INCREMENT'}
+}}); // highLevelState is {toggle: false, inc: 2}
+
+memoizedComposite();
+memoizedToggle();
+```
+
+The function result will be recalculated only for high-level state. For toggle state cached value would be taken.
+
+See the [complete memoize.js code](examples/memoize.js) in examples folder.
 
 ## Injections
