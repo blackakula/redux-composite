@@ -17,6 +17,11 @@ This way low-level systems could be re-usable in different high-level systems.
    1. [Low-level injections](README.md#low-level-injections)
    2. [Composite injections](README.md#composite-injections)
 
+### Demo
+'https://github.com/blackakula/redux-composite-demo/'
+
+The demo shows high-level system, that contains 3 buttons (each one is the same low-level system) and one textarea (as another low-level system) communicating with each other.
+
 ## Transitions (Reducers)
 
 In next example you have 2 low-level transitions defined:
