@@ -85,11 +85,11 @@ class Composite
                 return {
                     ...resolvedMemoize,
                     memoize: callback => {
-                        let state = getState(),
+                        let state = undefined,
                             result = undefined;
                         return (...parameters) => {
                             const next = getState();
-                            if (result === undefined || !equality(state, next)) {
+                            if (!equality(state, next)) {
                                 state = next;
                                 result = resolvedMemoize.memoize(callback)(...parameters);
                             }

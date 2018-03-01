@@ -14,6 +14,8 @@ This way low-level systems could be re-usable in different high-level systems.
 5. [Middleware](README.md#middleware)
 6. [Memoize](README.md#memoize)
 7. [Injections](README.md#injections)
+   1. [Low-level injections](README.md#low-level-injections)
+   2. [Composite injections](README.md#composite-injections)
 
 ## Transitions (Reducers)
 
@@ -381,3 +383,150 @@ The function result will be recalculated only for high-level state. For toggle s
 See the [complete memoize.js code](examples/memoize.js) in examples folder.
 
 ## Injections
+
+There are 2 ways to initialize `Composite` object: providing structure of sub-systems or giving "primitives" (at least reducer) for a low-level system.
+If neither structure is provided nor reducer (for low-level system), the exception would be thrown.
+
+The list of injectable "terms":
+* reducer
+* middleware
+* equality
+* subscribe
+* redux
+* memoize
+
+The complete injection syntax: `Composite({structure, reducer, middleware, equality, subscribe, redux, memoize})`
+
+> **Note:** By default Redux strictly checks, that the `action` parameter [is plain object](https://github.com/reactjs/redux/blob/master/src/createStore.js#L166) and has `type` property: `action: {type: string}`.
+> If you're not using Redux or having custom middleware, dealing with you custom actions (like [Redux Thunk](https://github.com/gaearon/redux-thunk)), the type could be any.
+> So, let's say `type Action = action: {type: string} | any`
+
+### Low-level injections
+
+The low-level composite initialization happens, when `structure` parameter is not provided to `Composite` constructor.
+For low-level system at least reducer **_is required_**.
+
+#### Reducer
+
+There is no default implementation for reducer.
+The reducer should accept `state` and `action` and return new state: `type Reducer = (state: State, action: Action): State`
+Keep your reducers immutable! Do not mutate original state - return new object, if state change.
+Otherwise, equality check may fail - and other features (memoize, subscribe) may not work.
+See [Reducers](README.md#transitions-reducers) section for examples.
+
+#### Middleware
+
+Default: `() => next => action => next(action)`
+
+You can inject any middleware, that follows interface:
+```javascript
+type Middleware = ({dispatch: (action: Action) => Action, getState: () => State}): ((action: Action) => Action).
+```
+
+For examples check [Middleware](README.md#middleware) section.
+
+#### Equality
+
+Default: `(prev, next) => prev === next`
+
+If you have more complex equality check between previous and next state, inject your own implementation:
+`type Equality = (prev: State, next: State): boolean`
+
+#### Subscribe
+
+Default (simplified): `(dispatch, getState) => listener => () => listener({dispatch, getState})`
+
+If you want additional custom behavior on all subscribed listeners to you low-level state changes, inject it using this interface:
+```javascript
+type Subscribe = (dispatch: (action: Action) => Action, getState: () => State): (Function => () => any)
+```
+
+The default implementation also checks the stage changes based on the provided equality.
+If you provide your own injection, you should implement (or disregard) your own state changes check.
+
+#### Redux
+
+Default:
+```javascript
+(dispatch, getState, subscribe) => ({
+    redux: {dispatch, getState, subscribe}
+})
+```
+
+By default the library provides in `redux` property the same low-level methods, as it was transformed from the high-level ones.
+You can implement your own wrappers on transformed methods using the interface:
+```javascript
+type Redux = (
+    dispatch: (action: Action) => Action,
+    getState: () => State,
+    subscribe: (Function => any)): {redux: {
+        dispatch: (action: Action) => Action,
+        getState: () => State,
+        subscribe: (Function => any)
+    }, structure?: mixed}
+```
+
+#### Memoize
+
+Default (simplified): `getState => ({memoize: callback => callback})`
+
+You're free to implement your own, using the interface:
+`memoize(getState: () => State): {memoize: Function => Function}`
+
+The default implementation checks the stage changes based on the provided equality and caches result of the callback.
+If you provide your own injection, you should implement (or disregard) your own state changes check and caching mechanism.
+
+### Composite injections
+
+If `structure` is provided, library assumes that this is not low-level component, therefore all the injections receive the transformed `structure`.
+The transformation converts all the low-system reducers to `Composite` objects.
+If low-system already provided as `Composite` object, no transformation happens.
+If you have nothing to inject, except `structure`, you can use short syntax to create `Composite` object:
+`Structure(highLevelSystemStructure)`, which is alias for `Composite({structure: highLevelSystemStructure})`.
+
+All the default implementations for high-level "terms" could be imported in `Defaults` object.
+
+#### Reducer
+
+Default: `Defaults.Reducer`
+
+Interface: `(structure: mixed): Reducer`
+
+#### Middleware
+
+Default: `Defaults.Middleware`
+
+There is a wrapper on default implementation, that checks, that composite action has sub-action for sub-component
+
+Interface: `(structure: mixed): Middleware`
+
+
+#### Equality
+
+Default: `Defaults.Equality`
+
+Interface: `(structure: mixed): Equality`
+
+#### Subscribe
+
+Default: `Defaults.Subscribe`
+
+There is a wrapper on the default implementation, that also checks the stage changes based on the provided equality.
+If you provide your own injection, you should implement (or disregard) your own state changes check.
+
+Interface: `(structure: mixed): Subscribe`
+
+#### Redux
+
+Default: `Defaults.Redux`
+
+Interface: `(structure: mixed): Redux`
+
+#### Memoize
+
+Default: `Defaults.Memoize`
+
+There is a wrapper on the default implementation, that checks the stage changes based on the provided equality and caches result of the callback.
+If you provide your own injection, you should implement (or disregard) your own state changes check and caching mechanism.
+
+Interface: `(structure: mixed): Memoize`
