@@ -388,7 +388,6 @@ module.exports =
 	        leafCondition: function leafCondition(data) {
 	            var isLeaf = _walkComposite.Defaults.LeafCondition(data);
 	            if (!(data instanceof _Composite2.default) && isLeaf && (!allowFunction || typeof data !== 'function')) {
-	                console.trace();
 	                throw {
 	                    message: "Structure leafs could be only instance of Composite or reducer function"
 	                };
