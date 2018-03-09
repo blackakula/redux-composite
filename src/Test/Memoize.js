@@ -1,4 +1,4 @@
-import {Structure, Composite} from '../index';
+import {Structure, Memoize} from '../index';
 import expect from 'expect';
 import {toggle, increment, calculator} from './Reducer';
 import {createStore, applyMiddleware} from 'redux';
@@ -58,6 +58,28 @@ const test = () => {
     expect(memoizeFunction(13, 14)).toEqual(27);
     // not updated!
     expect(memoizeFunctionsStructure.calc[0](14, 15)).toEqual(19);
+
+    // custom memoize
+    const custom = Memoize(
+        memoize.structure.toggle.memoize,
+        memoize.structure.calc[0].memoize
+    )(someFunction);
+
+    expect(custom(15, 16)).toEqual(31);
+    store.dispatch({type: 'COMPOSITE', composite: {
+        toggle: {type: 'TOGGLE'}
+    }});
+    expect(custom(16, 17)).toEqual(33);
+    store.dispatch({type: 'COMPOSITE', composite: {
+        calc: [undefined, {type: 'INCREMENT', value: 2}]
+    }});
+    // not changed: calc[1] is not part of memoize functions chain
+    expect(custom(17, 18)).toEqual(33);
+    store.dispatch({type: 'COMPOSITE', composite: {
+        calc: [{type: 'INCREMENT'}, {type: 'INCREMENT', value: 2}]
+    }});
+    // this time updated: calc[0] is part of memoize functions chain
+    expect(custom(18, 19)).toEqual(37);
 };
 
 export default test;
