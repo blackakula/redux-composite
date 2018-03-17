@@ -153,7 +153,7 @@ module.exports =
 	
 	var _Reducer2 = _interopRequireDefault(_Reducer);
 	
-	var _Middleware = __webpack_require__(/*! ./Composite/Middleware */ 8);
+	var _Middleware = __webpack_require__(/*! ./Composite/Middleware */ 9);
 	
 	var _Middleware2 = _interopRequireDefault(_Middleware);
 	
@@ -232,7 +232,7 @@ module.exports =
 	
 	var _Reducer2 = _interopRequireDefault(_Reducer);
 	
-	var _Middleware = __webpack_require__(/*! ./Composite/Middleware */ 8);
+	var _Middleware = __webpack_require__(/*! ./Composite/Middleware */ 9);
 	
 	var _Middleware2 = _interopRequireDefault(_Middleware);
 	
@@ -859,15 +859,23 @@ module.exports =
 	
 	var _ReduxAction = __webpack_require__(/*! ../Helper/ReduxAction */ 7);
 	
-	var _ReduxAction2 = _interopRequireDefault(_ReduxAction);
+	var _DefaultMutationMethod = __webpack_require__(/*! ../Helper/DefaultMutationMethod */ 8);
+	
+	var _DefaultMutationMethod2 = _interopRequireDefault(_DefaultMutationMethod);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var Reducer = function Reducer(compositeStructure) {
 	    return function (state, action) {
-	        return (0, _WalkComposite2.default)()(function (composite, state, action) {
+	        return (0, _WalkComposite2.default)({
+	            mutationMethod: function mutationMethod(key) {
+	                return function (composite, state, action) {
+	                    return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _DefaultMutationMethod2.default)(key)(state), (0, _ReduxAction.ActionMutateMethod)(action, key)];
+	                };
+	            }
+	        })(function (composite, state, action) {
 	            return state === undefined || action !== undefined ? composite.reducer(state, action) : state;
-	        })(compositeStructure, state, (0, _ReduxAction2.default)(action));
+	        })(compositeStructure, state, (0, _ReduxAction.ReduxAction)(action));
 	    };
 	};
 	exports.default = Reducer;
@@ -877,7 +885,54 @@ module.exports =
 /*!***********************************!*\
   !*** ./src/Helper/ReduxAction.js ***!
   \***********************************/
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.ActionMutateMethod = exports.MutateMethod = exports.InitAction = exports.ReduxAction = undefined;
+	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
+	var _DefaultMutationMethod = __webpack_require__(/*! ./DefaultMutationMethod */ 8);
+	
+	var _DefaultMutationMethod2 = _interopRequireDefault(_DefaultMutationMethod);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+	
+	var ReduxAction = function ReduxAction(action) {
+	    return (typeof action === 'undefined' ? 'undefined' : _typeof(action)) === 'object' && action.type === 'COMPOSITE' ? action.composite : action;
+	};
+	var InitAction = function InitAction(callback) {
+	    return function (action) {
+	        return callback({ type: 'COMPOSITE', composite: action });
+	    };
+	};
+	var MutateMethod = function MutateMethod(callback, key) {
+	    return function (action) {
+	        return callback(_defineProperty({}, key, action));
+	    };
+	};
+	var ActionMutateMethod = function ActionMutateMethod(action, key) {
+	    return (typeof action === 'undefined' ? 'undefined' : _typeof(action)) === 'object' && typeof action.type === 'string' && action.type.indexOf('@@') === 0 ? action : (0, _DefaultMutationMethod2.default)(key)(action);
+	};
+	
+	exports.ReduxAction = ReduxAction;
+	exports.InitAction = InitAction;
+	exports.MutateMethod = MutateMethod;
+	exports.ActionMutateMethod = ActionMutateMethod;
+	exports.default = ReduxAction;
+
+/***/ }),
+/* 8 */
+/*!*********************************************!*\
+  !*** ./src/Helper/DefaultMutationMethod.js ***!
+  \*********************************************/
+/***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
@@ -885,31 +940,17 @@ module.exports =
 	  value: true
 	});
 	
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	var _walkComposite = __webpack_require__(/*! walk-composite */ 5);
 	
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-	
-	var ReduxAction = function ReduxAction(action) {
-	  return (typeof action === 'undefined' ? 'undefined' : _typeof(action)) === 'object' && action.type === 'COMPOSITE' ? action.composite : action;
-	};
-	var InitAction = function InitAction(callback) {
-	  return function (action) {
-	    return callback({ type: 'COMPOSITE', composite: action });
+	var DefaultMutationMethod = function DefaultMutationMethod(key) {
+	  return function (data) {
+	    return _walkComposite.Defaults.MutationMethod(key)(data)[0];
 	  };
 	};
-	var MutateMethod = function MutateMethod(callback, key) {
-	  return function (action) {
-	    return callback(_defineProperty({}, key, action));
-	  };
-	};
-	
-	exports.ReduxAction = ReduxAction;
-	exports.InitAction = InitAction;
-	exports.MutateMethod = MutateMethod;
-	exports.default = ReduxAction;
+	exports.default = DefaultMutationMethod;
 
 /***/ }),
-/* 8 */
+/* 9 */
 /*!*************************************!*\
   !*** ./src/Composite/Middleware.js ***!
   \*************************************/
@@ -927,7 +968,7 @@ module.exports =
 	
 	var _ReduxAction = __webpack_require__(/*! ../Helper/ReduxAction */ 7);
 	
-	var _DefaultMutationMethod = __webpack_require__(/*! ../Helper/DefaultMutationMethod */ 9);
+	var _DefaultMutationMethod = __webpack_require__(/*! ../Helper/DefaultMutationMethod */ 8);
 	
 	var _DefaultMutationMethod2 = _interopRequireDefault(_DefaultMutationMethod);
 	
@@ -967,28 +1008,6 @@ module.exports =
 	exports.default = Middleware;
 
 /***/ }),
-/* 9 */
-/*!*********************************************!*\
-  !*** ./src/Helper/DefaultMutationMethod.js ***!
-  \*********************************************/
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _walkComposite = __webpack_require__(/*! walk-composite */ 5);
-	
-	var DefaultMutationMethod = function DefaultMutationMethod(key) {
-	  return function (data) {
-	    return _walkComposite.Defaults.MutationMethod(key)(data)[0];
-	  };
-	};
-	exports.default = DefaultMutationMethod;
-
-/***/ }),
 /* 10 */
 /*!********************************!*\
   !*** ./src/Helper/InitWalk.js ***!
@@ -1009,7 +1028,7 @@ module.exports =
 	
 	var _ReduxAction = __webpack_require__(/*! ../Helper/ReduxAction */ 7);
 	
-	var _DefaultMutationMethod = __webpack_require__(/*! ../Helper/DefaultMutationMethod */ 9);
+	var _DefaultMutationMethod = __webpack_require__(/*! ../Helper/DefaultMutationMethod */ 8);
 	
 	var _DefaultMutationMethod2 = _interopRequireDefault(_DefaultMutationMethod);
 	
@@ -1133,7 +1152,7 @@ module.exports =
 	
 	var _ReduxAction = __webpack_require__(/*! ../Helper/ReduxAction */ 7);
 	
-	var _DefaultMutationMethod = __webpack_require__(/*! ../Helper/DefaultMutationMethod */ 9);
+	var _DefaultMutationMethod = __webpack_require__(/*! ../Helper/DefaultMutationMethod */ 8);
 	
 	var _DefaultMutationMethod2 = _interopRequireDefault(_DefaultMutationMethod);
 	
@@ -1183,7 +1202,7 @@ module.exports =
 	
 	var _WalkComposite2 = _interopRequireDefault(_WalkComposite);
 	
-	var _DefaultMutationMethod = __webpack_require__(/*! ../Helper/DefaultMutationMethod */ 9);
+	var _DefaultMutationMethod = __webpack_require__(/*! ../Helper/DefaultMutationMethod */ 8);
 	
 	var _DefaultMutationMethod2 = _interopRequireDefault(_DefaultMutationMethod);
 	
