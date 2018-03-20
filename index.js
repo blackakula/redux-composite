@@ -182,6 +182,8 @@ module.exports =
 	});
 	exports.Wrappers = undefined;
 	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 	
 	var _WalkComposite = __webpack_require__(/*! ./Helper/WalkComposite */ 4);
@@ -218,6 +220,35 @@ module.exports =
 	
 	var defaultEquality = function defaultEquality(prev, next) {
 	    return prev === next;
+	};
+	
+	var defaultMiddleware = function defaultMiddleware() {
+	    return function (next) {
+	        return function (action) {
+	            return next(action);
+	        };
+	    };
+	};
+	
+	var applyMiddleware = function applyMiddleware(middlewares) {
+	    if (middlewares.length === 0) {
+	        return defaultMiddleware;
+	    } else if (middlewares.length === 1) {
+	        return middlewares[0];
+	    }
+	    return function (_ref) {
+	        var dispatch = _ref.dispatch,
+	            getState = _ref.getState;
+	
+	        var chain = middlewares.map(function (middleware) {
+	            return middleware({ dispatch: dispatch, getState: getState });
+	        }).reverse();
+	        return function (next) {
+	            return chain.reduce(function (resultMiddleware, middleware) {
+	                return middleware(resultMiddleware);
+	            }, next);
+	        };
+	    };
 	};
 	
 	var Wrappers = exports.Wrappers = {
@@ -293,13 +324,9 @@ module.exports =
 	    };
 	
 	    this.reducer = injection(reducer, _Reducer2.default);
-	    this.middleware = injection(middleware, _Middleware2.default, function () {
-	        return function (next) {
-	            return function (action) {
-	                return next(action);
-	            };
-	        };
-	    });
+	    this.middleware = injection(structure === undefined && (typeof middleware === 'undefined' ? 'undefined' : _typeof(middleware)) === 'object' && Array.isArray(middleware) ? applyMiddleware(middleware.filter(function (oneMiddleware) {
+	        return typeof oneMiddleware === 'function';
+	    })) : middleware, _Middleware2.default, defaultMiddleware);
 	    this.equality = injection(equality, _Equality2.default, defaultEquality);
 	    this.subscribe = injection(subscribe, _Subscribe2.default, function (dispatch, getState) {
 	        return function (listener) {

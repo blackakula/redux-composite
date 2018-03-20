@@ -8,6 +8,21 @@ import Memoize from './Composite/Memoize';
 
 const defaultEquality = (prev, next) => prev === next;
 
+const defaultMiddleware = () => next => action => next(action);
+
+const applyMiddleware = middlewares => {
+    if (middlewares.length === 0) {
+        return defaultMiddleware;
+    } else if (middlewares.length === 1) {
+        return middlewares[0];
+    }
+    return ({dispatch, getState}) => {
+        const chain = middlewares.map(middleware => middleware({dispatch, getState})).reverse();
+        return next => chain.reduce((resultMiddleware, middleware) => middleware(resultMiddleware), next)
+    };
+};
+
+
 export const Wrappers = {
     Subscribe: (originalSubscribe, equality) => (dispatch, getState, subscribe = undefined) => listeners => {
         if (listeners === undefined) {
@@ -77,9 +92,11 @@ class Composite
 
         this.reducer = injection(reducer, Reducer);
         this.middleware = injection(
-            middleware,
+            structure === undefined && typeof middleware === 'object' && Array.isArray(middleware)
+                ? applyMiddleware(middleware.filter(oneMiddleware => typeof oneMiddleware === 'function'))
+                : middleware,
             Middleware,
-            () => next => action => next(action)
+            defaultMiddleware
         );
         this.equality = injection(
             equality,

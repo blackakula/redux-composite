@@ -120,5 +120,32 @@ const test = () => {
             calc: [4, 5]
         }
     });
+
+    // test several middlewares
+    let states = [1, 1];
+    const middlewareMultiply2 = i => () => next => action => {
+        states[i] *= 2;
+        return next(action);
+    };
+    const middlewareAdd3 = i => () => next => action => {
+        states[i] += 3;
+        return next(action);
+    };
+
+    const testStructure = Structure([
+        Composite({
+            reducer: toggle,
+            middleware: [middlewareMultiply2(0), middlewareAdd3(0)]
+        }),
+        Composite({
+            reducer: toggle,
+            middleware: [middlewareAdd3(1), middlewareMultiply2(1)]
+        })
+    ]);
+    let testStore = createStore(testStructure.reducer, applyMiddleware(testStructure.middleware));
+    testStore.dispatch({type: 'COMPOSITE', composite: [{type: 'TOGGLE'}, {type: 'TOGGLE'}]});
+    expect(states).toEqual([5, 8]);
+    testStore.dispatch({type: 'COMPOSITE', composite: [{type: 'TOGGLE'}]});
+    expect(states).toEqual([13, 8]);
 };
 export default test;

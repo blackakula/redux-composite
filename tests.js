@@ -222,6 +222,8 @@ module.exports =
 	});
 	exports.Wrappers = undefined;
 	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 	
 	var _WalkComposite = __webpack_require__(/*! ./Helper/WalkComposite */ 4);
@@ -258,6 +260,35 @@ module.exports =
 	
 	var defaultEquality = function defaultEquality(prev, next) {
 	    return prev === next;
+	};
+	
+	var defaultMiddleware = function defaultMiddleware() {
+	    return function (next) {
+	        return function (action) {
+	            return next(action);
+	        };
+	    };
+	};
+	
+	var applyMiddleware = function applyMiddleware(middlewares) {
+	    if (middlewares.length === 0) {
+	        return defaultMiddleware;
+	    } else if (middlewares.length === 1) {
+	        return middlewares[0];
+	    }
+	    return function (_ref) {
+	        var dispatch = _ref.dispatch,
+	            getState = _ref.getState;
+	
+	        var chain = middlewares.map(function (middleware) {
+	            return middleware({ dispatch: dispatch, getState: getState });
+	        }).reverse();
+	        return function (next) {
+	            return chain.reduce(function (resultMiddleware, middleware) {
+	                return middleware(resultMiddleware);
+	            }, next);
+	        };
+	    };
 	};
 	
 	var Wrappers = exports.Wrappers = {
@@ -333,13 +364,9 @@ module.exports =
 	    };
 	
 	    this.reducer = injection(reducer, _Reducer2.default);
-	    this.middleware = injection(middleware, _Middleware2.default, function () {
-	        return function (next) {
-	            return function (action) {
-	                return next(action);
-	            };
-	        };
-	    });
+	    this.middleware = injection(structure === undefined && (typeof middleware === 'undefined' ? 'undefined' : _typeof(middleware)) === 'object' && Array.isArray(middleware) ? applyMiddleware(middleware.filter(function (oneMiddleware) {
+	        return typeof oneMiddleware === 'function';
+	    })) : middleware, _Middleware2.default, defaultMiddleware);
 	    this.equality = injection(equality, _Equality2.default, defaultEquality);
 	    this.subscribe = injection(subscribe, _Subscribe2.default, function (dispatch, getState) {
 	        return function (listener) {
@@ -6043,6 +6070,42 @@ module.exports =
 	            calc: [4, 5]
 	        }
 	    });
+	
+	    // test several middlewares
+	    var states = [1, 1];
+	    var middlewareMultiply2 = function middlewareMultiply2(i) {
+	        return function () {
+	            return function (next) {
+	                return function (action) {
+	                    states[i] *= 2;
+	                    return next(action);
+	                };
+	            };
+	        };
+	    };
+	    var middlewareAdd3 = function middlewareAdd3(i) {
+	        return function () {
+	            return function (next) {
+	                return function (action) {
+	                    states[i] += 3;
+	                    return next(action);
+	                };
+	            };
+	        };
+	    };
+	
+	    var testStructure = (0, _index.Structure)([(0, _index.Composite)({
+	        reducer: _Reducer.toggle,
+	        middleware: [middlewareMultiply2(0), middlewareAdd3(0)]
+	    }), (0, _index.Composite)({
+	        reducer: _Reducer.toggle,
+	        middleware: [middlewareAdd3(1), middlewareMultiply2(1)]
+	    })]);
+	    var testStore = (0, _redux.createStore)(testStructure.reducer, (0, _redux.applyMiddleware)(testStructure.middleware));
+	    testStore.dispatch({ type: 'COMPOSITE', composite: [{ type: 'TOGGLE' }, { type: 'TOGGLE' }] });
+	    (0, _expect2.default)(states).toEqual([5, 8]);
+	    testStore.dispatch({ type: 'COMPOSITE', composite: [{ type: 'TOGGLE' }] });
+	    (0, _expect2.default)(states).toEqual([13, 8]);
 	};
 	exports.default = test;
 
