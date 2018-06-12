@@ -7544,6 +7544,80 @@ module.exports =
 	    (0, _expect2.default)(custom(18, 19)).toEqual(37);
 	};
 	
+	var test3 = function test3(composite) {
+	    var store = (0, _redux.createStore)(composite.reducer, { toggle: false, calc: [0, 1] }, (0, _redux.applyMiddleware)(composite.middleware));
+	    var calculated = { total: 0, structure: { toggle: 0, calc: [0, 0] } };
+	    var structure = {
+	        memoize: function memoize(_ref) {
+	            var structure = _ref.structure;
+	
+	            calculated.total += 1;
+	            var toggle = structure.toggle,
+	                calc = structure.calc;
+	
+	            return toggle() ? calc[0]() : calc[1]();
+	        },
+	        structure: {
+	            toggle: function toggle(_ref2) {
+	                var getState = _ref2.getState;
+	
+	                calculated.structure.toggle += 1;
+	                return getState();
+	            },
+	            calc: [function (_ref3) {
+	                var getState = _ref3.getState;
+	
+	                calculated.structure.calc[0] += 1;
+	                return getState() - 1;
+	            }, function (_ref4) {
+	                var getState = _ref4.getState;
+	
+	                calculated.structure.calc[1] += 1;
+	                return getState() + 1;
+	            }]
+	        }
+	    };
+	    var memoize = composite.memoize(store.getState);
+	    var redux = composite.redux(undefined, store.getState, undefined).structure;
+	    var memoized = {
+	        toggle: memoize.structure.toggle.memoize(function () {
+	            return structure.structure.toggle({ getState: redux.toggle.redux.getState });
+	        }),
+	        calc: [memoize.structure.calc[0].memoize(function () {
+	            return structure.structure.calc[0]({ getState: redux.calc[0].redux.getState });
+	        }), memoize.structure.calc[1].memoize(function () {
+	            return structure.structure.calc[1]({ getState: redux.calc[1].redux.getState });
+	        })]
+	        // Expected this final to be generated
+	    };var final = {
+	        memoize: memoize.memoize(function () {
+	            return structure.memoize({ structure: memoized, getState: store.getState });
+	        }),
+	        structure: memoized
+	    };
+	    var finalMemoize = final.memoize;
+	
+	    // Expected behavior
+	    (0, _expect2.default)(finalMemoize()).toEqual(2);
+	    (0, _expect2.default)(calculated).toEqual({ total: 1, structure: { toggle: 1, calc: [0, 1] } });
+	    (0, _expect2.default)(finalMemoize()).toEqual(2);
+	    (0, _expect2.default)(calculated).toEqual({ total: 1, structure: { toggle: 1, calc: [0, 1] } });
+	    store.dispatch({ type: 'COMPOSITE', composite: { toggle: { type: 'TOGGLE' } } });
+	    (0, _expect2.default)(finalMemoize()).toEqual(-1);
+	    (0, _expect2.default)(calculated).toEqual({ total: 2, structure: { toggle: 2, calc: [1, 1] } });
+	    (0, _expect2.default)(finalMemoize()).toEqual(-1);
+	    (0, _expect2.default)(calculated).toEqual({ total: 2, structure: { toggle: 2, calc: [1, 1] } });
+	    store.dispatch({ type: 'COMPOSITE', composite: { calc: [{ type: 'INCREMENT' }] } });
+	    (0, _expect2.default)(finalMemoize()).toEqual(0);
+	    (0, _expect2.default)(calculated).toEqual({ total: 3, structure: { toggle: 2, calc: [2, 1] } });
+	    store.dispatch({ type: 'COMPOSITE', composite: { toggle: { type: 'TOGGLE' }, calc: [undefined, { type: 'DECREMENT', value: -5 }] } });
+	    (0, _expect2.default)(finalMemoize()).toEqual(7);
+	    (0, _expect2.default)(calculated).toEqual({ total: 4, structure: { toggle: 3, calc: [2, 2] } });
+	    store.dispatch({ type: 'COMPOSITE', composite: { toggle: { type: 'TOGGLE' }, calc: [undefined, { type: 'DECREMENT', value: -5 }] } });
+	    (0, _expect2.default)(finalMemoize()).toEqual(0);
+	    (0, _expect2.default)(calculated).toEqual({ total: 5, structure: { toggle: 4, calc: [2, 2] } });
+	};
+	
 	var test = function test() {
 	    var composite = (0, _index.Structure)({
 	        toggle: _Reducer.toggle,
@@ -7557,6 +7631,8 @@ module.exports =
 	    test1(memoize, store.dispatch);
 	
 	    test2(memoize, store.dispatch);
+	
+	    test3(composite);
 	};
 	
 	exports.default = test;
