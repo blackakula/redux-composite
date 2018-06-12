@@ -89,18 +89,6 @@ module.exports =
 	  });
 	});
 	
-	var _Memoize = __webpack_require__(/*! ./Memoize */ 16);
-	
-	Object.keys(_Memoize).forEach(function (key) {
-	  if (key === "default" || key === "__esModule") return;
-	  Object.defineProperty(exports, key, {
-	    enumerable: true,
-	    get: function get() {
-	      return _Memoize[key];
-	    }
-	  });
-	});
-	
 	var _Composite = __webpack_require__(/*! ./Composite */ 3);
 	
 	var _Composite2 = _interopRequireDefault(_Composite);
@@ -129,19 +117,17 @@ module.exports =
 	
 	var _Redux4 = _interopRequireDefault(_Redux3);
 	
-	var _Memoize2 = __webpack_require__(/*! ./Composite/Memoize */ 14);
+	var _Memoize = __webpack_require__(/*! ./Composite/Memoize */ 14);
 	
-	var _Memoize3 = _interopRequireDefault(_Memoize2);
-	
-	var _Memoize4 = _interopRequireDefault(_Memoize);
+	var _Memoize2 = _interopRequireDefault(_Memoize);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var Defaults = exports.Defaults = { Reducer: _Reducer2.default, Middleware: _Middleware2.default, Equality: _Equality2.default, Subscribe: _Subscribe2.default, Redux: _Redux4.default, Memoize: _Memoize3.default };
+	var Defaults = exports.Defaults = { Reducer: _Reducer2.default, Middleware: _Middleware2.default, Equality: _Equality2.default, Subscribe: _Subscribe2.default, Redux: _Redux4.default, Memoize: _Memoize2.default };
 	var Composite = exports.Composite = function Composite(parameters) {
 	  return new _Composite2.default(parameters);
 	};
-	exports.default = { Composite: Composite, Structure: _Structure2.default, Redux: _Redux2.default, Memoize: _Memoize4.default, Defaults: Defaults, Wrappers: _Composite.Wrappers };
+	exports.default = { Composite: Composite, Structure: _Structure2.default, Redux: _Redux2.default, Defaults: Defaults, Wrappers: _Composite.Wrappers };
 
 /***/ }),
 /* 2 */
@@ -1242,52 +1228,6 @@ module.exports =
 	};
 	
 	exports.default = Redux;
-
-/***/ }),
-/* 16 */
-/*!************************!*\
-  !*** ./src/Memoize.js ***!
-  \************************/
-/***/ (function(module, exports) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	var memoizeToggle = function memoizeToggle(memoize) {
-	    var state = false;
-	    return memoize(function () {
-	        state = !state;
-	        return state;
-	    });
-	};
-	
-	var Memoize = exports.Memoize = function Memoize() {
-	    for (var _len = arguments.length, memoizeChain = Array(_len), _key = 0; _key < _len; _key++) {
-	        memoizeChain[_key] = arguments[_key];
-	    }
-	
-	    var memoizeToggleChain = memoizeChain.map(function (memoize) {
-	        return memoizeToggle(memoize);
-	    });
-	    return function (callback) {
-	        var state = undefined,
-	            result = undefined;
-	        return function () {
-	            var next = memoizeToggleChain.map(function (memoizeToggleItem) {
-	                return memoizeToggleItem() ? '1' : '0';
-	            }).join('');
-	            if (next !== state) {
-	                state = next;
-	                result = callback.apply(undefined, arguments);
-	            }
-	            return result;
-	        };
-	    };
-	};
-	
-	exports.default = Memoize;
 
 /***/ })
 /******/ ]);

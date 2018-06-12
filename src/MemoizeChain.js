@@ -6,7 +6,7 @@ const memoizeToggle = memoize => {
     });
 };
 
-export const Memoize = (...memoizeChain) => {
+export const MemoizeChain = (...memoizeChain) => {
     const memoizeToggleChain = memoizeChain.map(memoize => memoizeToggle(memoize));
     return callback => {
         let state = undefined,
@@ -22,4 +22,4 @@ export const Memoize = (...memoizeChain) => {
     };
 };
 
-export default Memoize;
+export default MemoizeChain;
