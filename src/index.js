@@ -7,8 +7,10 @@ import Equality from './Composite/Equality';
 import Subscribe from './Composite/Subscribe';
 import Redux from './Composite/Redux';
 import Memoize from './Composite/Memoize';
+import InitRedux from './Redux';
+import InitMemoize from './Memoize';
 
-export const Defaults = {Reducer, Middleware, Equality, Subscribe, Redux, Memoize};
+export const Defaults = {Reducer, Middleware, Equality, Subscribe, Redux, Memoize, Init: {Store: InitRedux, Memoize: InitMemoize}};
 export const Composite = parameters => new CompositeClass(parameters);
 export * from './Structure';
 

@@ -107,9 +107,17 @@ module.exports =
 	
 	var _Memoize2 = _interopRequireDefault(_Memoize);
 	
+	var _Redux3 = __webpack_require__(/*! ./Redux */ 15);
+	
+	var _Redux4 = _interopRequireDefault(_Redux3);
+	
+	var _Memoize3 = __webpack_require__(/*! ./Memoize */ 16);
+	
+	var _Memoize4 = _interopRequireDefault(_Memoize3);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var Defaults = exports.Defaults = { Reducer: _Reducer2.default, Middleware: _Middleware2.default, Equality: _Equality2.default, Subscribe: _Subscribe2.default, Redux: _Redux2.default, Memoize: _Memoize2.default };
+	var Defaults = exports.Defaults = { Reducer: _Reducer2.default, Middleware: _Middleware2.default, Equality: _Equality2.default, Subscribe: _Subscribe2.default, Redux: _Redux2.default, Memoize: _Memoize2.default, Init: { Store: _Redux4.default, Memoize: _Memoize4.default } };
 	var Composite = exports.Composite = function Composite(parameters) {
 	  return new _Composite2.default(parameters);
 	};
