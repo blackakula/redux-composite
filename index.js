@@ -1265,11 +1265,11 @@ module.exports =
 	    return typeof memoize.memoize === 'function' && memoize.structure !== undefined;
 	};
 	
-	var MemoizeWalk = function MemoizeWalk() {
-	    var parameters = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	var MemoizeWalk = function MemoizeWalk(originalMemoize) {
+	    var parameters = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 	    return (0, _walkComposite.Walk)(_extends({
 	        leafCondition: function leafCondition(memoize) {
-	            return typeof memoize.memoize === 'function' && memoize.structure === undefined;
+	            return typeof memoize.memoize === 'function' && (memoize.structure === undefined || memoize !== originalMemoize);
 	        },
 	        keysMethod: function keysMethod(memoize) {
 	            return _walkComposite.Defaults.KeysMethod(useStructure(memoize) ? memoize.structure : memoize);
@@ -1284,22 +1284,23 @@ module.exports =
 	            };
 	        },
 	        walkMethod: function walkMethod(parameters) {
-	            return MemoizeWalk(parameters);
+	            return MemoizeWalk(originalMemoize, parameters);
 	        }
 	    }, parameters));
 	};
 	
-	var Memoize = exports.Memoize = function Memoize(composite) {
+	var MemoizeByMemoize = function MemoizeByMemoize(memoize) {
 	    return function (getState) {
-	        var memoize = composite.memoize(getState);
 	        return function (memoizationStructure) {
-	            var structure = MemoizeWalk()(function (memoize, structure, getState) {
-	                return structure === undefined ? undefined : memoize.memoize(function () {
+	            var structure = MemoizeWalk(memoize)(function (memoize, structure, getState) {
+	                return structure === undefined ? undefined : function (memoized) {
+	                    return memoize.structure === undefined ? memoized : MemoizeByMemoize(memoize)(getState)(structure);
+	                }(memoize.memoize(function () {
 	                    return structure({
 	                        getState: getState,
 	                        structure: structure
 	                    });
-	                });
+	                }));
 	            })(memoize, memoizationStructure, getState);
 	            return _extends({
 	                structure: structure
@@ -1312,6 +1313,10 @@ module.exports =
 	            }(typeof memoizationStructure === 'function' ? memoizationStructure : memoizationStructure.memoize));
 	        };
 	    };
+	};
+	
+	var Memoize = exports.Memoize = function Memoize(composite, getState) {
+	    return MemoizeByMemoize(composite.memoize(getState))(getState);
 	};
 	
 	exports.default = Memoize;

@@ -2,8 +2,9 @@ import {Walk, Defaults} from 'walk-composite';
 
 const useStructure = memoize => typeof memoize.memoize === 'function' && memoize.structure !== undefined
 
-const MemoizeWalk = (parameters = {}) => Walk({
-    leafCondition: memoize => typeof memoize.memoize === 'function' && memoize.structure === undefined,
+const MemoizeWalk = (originalMemoize, parameters = {}) => Walk({
+    leafCondition: memoize => typeof memoize.memoize === 'function'
+        && (memoize.structure === undefined || memoize !== originalMemoize),
     keysMethod: memoize => {
         return Defaults.KeysMethod(useStructure(memoize) ? memoize.structure : memoize)
     },
@@ -12,18 +13,17 @@ const MemoizeWalk = (parameters = {}) => Walk({
         (structure => structure !== undefined && structure[key] !== undefined ? structure[key] : undefined)(useStructure(memoize) ? memoizeStructure.structure : memoizeStructure),
         () => getState()[key]
     ],
-    walkMethod: parameters => MemoizeWalk(parameters),
+    walkMethod: parameters => MemoizeWalk(originalMemoize, parameters),
     ...parameters
 })
 
-export const Memoize = composite => getState => {
-    const memoize = composite.memoize(getState)
+const MemoizeByMemoize = memoize => getState => {
     return memoizationStructure => {
-        const structure = MemoizeWalk()(
-            (memoize, structure, getState) => structure === undefined ? undefined : memoize.memoize(() => structure({
+        const structure = MemoizeWalk(memoize)(
+            (memoize, structure, getState) => structure === undefined ? undefined : (memoized => memoize.structure === undefined ? memoized : MemoizeByMemoize(memoize)(getState)(structure))(memoize.memoize(() => structure({
                 getState,
                 structure
-            }))
+            })))
         )(memoize, memoizationStructure, getState)
         return {
             structure,
@@ -33,5 +33,7 @@ export const Memoize = composite => getState => {
         }
     }
 }
+
+export const Memoize = (composite, getState) => MemoizeByMemoize(composite.memoize(getState))(getState)
 
 export default Memoize

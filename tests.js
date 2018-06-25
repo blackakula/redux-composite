@@ -1305,11 +1305,11 @@ module.exports =
 	    return typeof memoize.memoize === 'function' && memoize.structure !== undefined;
 	};
 	
-	var MemoizeWalk = function MemoizeWalk() {
-	    var parameters = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	var MemoizeWalk = function MemoizeWalk(originalMemoize) {
+	    var parameters = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 	    return (0, _walkComposite.Walk)(_extends({
 	        leafCondition: function leafCondition(memoize) {
-	            return typeof memoize.memoize === 'function' && memoize.structure === undefined;
+	            return typeof memoize.memoize === 'function' && (memoize.structure === undefined || memoize !== originalMemoize);
 	        },
 	        keysMethod: function keysMethod(memoize) {
 	            return _walkComposite.Defaults.KeysMethod(useStructure(memoize) ? memoize.structure : memoize);
@@ -1324,22 +1324,23 @@ module.exports =
 	            };
 	        },
 	        walkMethod: function walkMethod(parameters) {
-	            return MemoizeWalk(parameters);
+	            return MemoizeWalk(originalMemoize, parameters);
 	        }
 	    }, parameters));
 	};
 	
-	var Memoize = exports.Memoize = function Memoize(composite) {
+	var MemoizeByMemoize = function MemoizeByMemoize(memoize) {
 	    return function (getState) {
-	        var memoize = composite.memoize(getState);
 	        return function (memoizationStructure) {
-	            var structure = MemoizeWalk()(function (memoize, structure, getState) {
-	                return structure === undefined ? undefined : memoize.memoize(function () {
+	            var structure = MemoizeWalk(memoize)(function (memoize, structure, getState) {
+	                return structure === undefined ? undefined : function (memoized) {
+	                    return memoize.structure === undefined ? memoized : MemoizeByMemoize(memoize)(getState)(structure);
+	                }(memoize.memoize(function () {
 	                    return structure({
 	                        getState: getState,
 	                        structure: structure
 	                    });
-	                });
+	                }));
 	            })(memoize, memoizationStructure, getState);
 	            return _extends({
 	                structure: structure
@@ -1352,6 +1353,10 @@ module.exports =
 	            }(typeof memoizationStructure === 'function' ? memoizationStructure : memoizationStructure.memoize));
 	        };
 	    };
+	};
+	
+	var Memoize = exports.Memoize = function Memoize(composite, getState) {
+	    return MemoizeByMemoize(composite.memoize(getState))(getState);
 	};
 	
 	exports.default = Memoize;
@@ -7635,7 +7640,7 @@ module.exports =
 	    var store = (0, _redux.createStore)(composite.reducer, { toggle: false, calc: [0, 1] }, (0, _redux.applyMiddleware)(composite.middleware));
 	    var calculated = { total: 0, structure: { toggle: 0, calc: [0, 0] } };
 	
-	    var memoized1 = (0, _index.Memoize)(composite)(store.getState)({
+	    var structureSimple = {
 	        memoize: function memoize(_ref) {
 	            var structure = _ref.structure;
 	
@@ -7664,7 +7669,9 @@ module.exports =
 	                return getState() + 1;
 	            }]
 	        }
-	    });
+	    };
+	    var memoizeSimple = (0, _index.Memoize)(composite, store.getState);
+	    var memoized1 = memoizeSimple(structureSimple);
 	    var finalMemoize1 = memoized1.memoize;
 	
 	    // Expected behavior
@@ -7687,20 +7694,10 @@ module.exports =
 	    (0, _expect2.default)(finalMemoize1()).toEqual(0);
 	    (0, _expect2.default)(calculated).toEqual({ total: 5, structure: { toggle: 4, calc: [2, 2] } });
 	
-	    var memoized2 = (0, _index.Memoize)(composite)(store.getState)({
+	    var memoized2 = memoizeSimple({
 	        structure: {
-	            toggle: function toggle(_ref5) {
-	                var getState = _ref5.getState;
-	
-	                calculated.structure.toggle += 1;
-	                return getState();
-	            },
-	            calc: [function (_ref6) {
-	                var getState = _ref6.getState;
-	
-	                calculated.structure.calc[0] += 1;
-	                return getState() - 1;
-	            }]
+	            toggle: structureSimple.structure.toggle,
+	            calc: [structureSimple.structure.calc[0]]
 	        }
 	    }).structure;
 	    (0, _expect2.default)(memoized2.toggle()).toEqual(true);
@@ -7710,6 +7707,46 @@ module.exports =
 	    (0, _expect2.default)(memoized2.toggle()).toEqual(false);
 	    (0, _expect2.default)(memoized2.calc[0]()).toEqual(0);
 	    (0, _expect2.default)(calculated).toEqual({ total: 5, structure: { toggle: 6, calc: [3, 2] } });
+	
+	    var complexComposite = (0, _index.Structure)({
+	        increment: _Reducer.increment,
+	        reducer: composite
+	    });
+	    var complexStore = (0, _redux.createStore)(complexComposite.reducer, { increment: 1, reducer: { toggle: false, calc: [0, 1] } }, (0, _redux.applyMiddleware)(complexComposite.middleware));
+	
+	    var complexCalculated = { total: 0, increment: 0
+	        // reset
+	    };calculated = { total: 0, structure: { toggle: 0, calc: [0, 0] } };
+	    var complexMemoized = (0, _index.Memoize)(complexComposite, complexStore.getState)({
+	        memoize: function memoize(_ref5) {
+	            var structure = _ref5.structure;
+	
+	            complexCalculated.total += 1;
+	            var increment = structure.increment,
+	                reducer = structure.reducer;
+	
+	            return increment() * reducer.memoize();
+	        },
+	        structure: {
+	            increment: function increment(_ref6) {
+	                var getState = _ref6.getState;
+	
+	                complexCalculated.increment += 1;
+	                return getState();
+	            },
+	            reducer: structureSimple
+	        }
+	    });
+	    var finalComplexMemoize = complexMemoized.memoize;
+	    (0, _expect2.default)(finalComplexMemoize()).toEqual(2);
+	    (0, _expect2.default)(calculated).toEqual({ total: 1, structure: { toggle: 1, calc: [0, 1] } });
+	    (0, _expect2.default)(complexCalculated).toEqual({ total: 1, increment: 1 });
+	    (0, _expect2.default)(complexMemoized.structure.reducer.structure.calc[0]()).toEqual(-1);
+	    (0, _expect2.default)(calculated).toEqual({ total: 1, structure: { toggle: 1, calc: [1, 1] } });
+	    complexStore.dispatch({ type: 'COMPOSITE', composite: { increment: { type: 'INCREMENT' }, reducer: { toggle: { type: 'TOGGLE' } } } });
+	    (0, _expect2.default)(finalComplexMemoize()).toEqual(-2);
+	    (0, _expect2.default)(calculated).toEqual({ total: 2, structure: { toggle: 2, calc: [1, 1] } });
+	    (0, _expect2.default)(complexCalculated).toEqual({ total: 2, increment: 2 });
 	};
 	
 	var test = function test() {

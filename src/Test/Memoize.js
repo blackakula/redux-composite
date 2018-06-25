@@ -79,7 +79,7 @@ const test3 = composite => {
     );
     let calculated = {total: 0, structure: {toggle: 0, calc: [0, 0]}};
 
-    const memoized1 = Memoize(composite)(store.getState)({
+    const structureSimple = {
         memoize: ({structure}) => {
             calculated.total += 1;
             const {toggle, calc} = structure;
@@ -101,7 +101,9 @@ const test3 = composite => {
                 }
             ]
         }
-    })
+    };
+    const memoizeSimple = Memoize(composite, store.getState)
+    const memoized1 = memoizeSimple(structureSimple)
     const finalMemoize1 = memoized1.memoize;
 
     // Expected behavior
@@ -124,18 +126,10 @@ const test3 = composite => {
     expect(finalMemoize1()).toEqual(0);
     expect(calculated).toEqual({total: 5, structure: {toggle: 4, calc: [2, 2]}});
 
-    const memoized2 = Memoize(composite)(store.getState)({
+    const memoized2 = memoizeSimple({
         structure: {
-            toggle: ({getState}) => {
-                calculated.structure.toggle += 1;
-                return getState();
-            },
-            calc: [
-                ({getState}) => {
-                    calculated.structure.calc[0] += 1;
-                    return getState() - 1;
-                }
-            ]
+            toggle: structureSimple.structure.toggle,
+            calc: [structureSimple.structure.calc[0]]
         }
     }).structure;
     expect(memoized2.toggle()).toEqual(true);
@@ -145,6 +139,44 @@ const test3 = composite => {
     expect(memoized2.toggle()).toEqual(false);
     expect(memoized2.calc[0]()).toEqual(0);
     expect(calculated).toEqual({total: 5, structure: {toggle: 6, calc: [3, 2]}});
+
+    const complexComposite = Structure({
+        increment,
+        reducer: composite
+    })
+    let complexStore = createStore(
+        complexComposite.reducer,
+        {increment: 1, reducer: {toggle: false, calc: [0, 1]}},
+        applyMiddleware(complexComposite.middleware)
+    );
+
+    let complexCalculated = {total: 0, increment: 0}
+    // reset
+    calculated = {total: 0, structure: {toggle: 0, calc: [0, 0]}}
+    const complexMemoized = Memoize(complexComposite, complexStore.getState)({
+        memoize: ({structure}) => {
+            complexCalculated.total += 1;
+            const {increment, reducer} = structure;
+            return increment() * reducer.memoize()
+        },
+        structure: {
+            increment: ({getState}) => {
+                complexCalculated.increment += 1
+                return getState()
+            },
+            reducer: structureSimple
+        }
+    })
+    const finalComplexMemoize = complexMemoized.memoize;
+    expect(finalComplexMemoize()).toEqual(2);
+    expect(calculated).toEqual({total: 1, structure: {toggle: 1, calc: [0, 1]}});
+    expect(complexCalculated).toEqual({total: 1, increment: 1});
+    expect(complexMemoized.structure.reducer.structure.calc[0]()).toEqual(-1);
+    expect(calculated).toEqual({total: 1, structure: {toggle: 1, calc: [1, 1]}});
+    complexStore.dispatch({type: 'COMPOSITE', composite: {increment: {type: 'INCREMENT'}, reducer: {toggle: {type: 'TOGGLE'}}}});
+    expect(finalComplexMemoize()).toEqual(-2);
+    expect(calculated).toEqual({total: 2, structure: {toggle: 2, calc: [1, 1]}});
+    expect(complexCalculated).toEqual({total: 2, increment: 2});
 }
 
 const test = () => {
