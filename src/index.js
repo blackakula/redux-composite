@@ -1,6 +1,7 @@
 import CompositeClass, {Wrappers} from './Composite';
 import Structure from './Structure';
 import Redux from './Redux';
+import Memoize from './Memoize';
 
 import Reducer from './Composite/Reducer';
 import Middleware from './Composite/Middleware';
@@ -13,5 +14,6 @@ export const Defaults = {Reducer, Middleware, Equality, Subscribe, Redux: Compos
 export const Composite = parameters => new CompositeClass(parameters);
 export * from './Structure';
 export * from './Redux';
+export * from './Memoize';
 
-export default {Composite, Structure, Redux, Defaults, Wrappers};
+export default {Composite, Structure, Redux, Memoize, Defaults, Wrappers};

@@ -89,6 +89,18 @@ module.exports =
 	  });
 	});
 	
+	var _Memoize = __webpack_require__(/*! ./Memoize */ 16);
+	
+	Object.keys(_Memoize).forEach(function (key) {
+	  if (key === "default" || key === "__esModule") return;
+	  Object.defineProperty(exports, key, {
+	    enumerable: true,
+	    get: function get() {
+	      return _Memoize[key];
+	    }
+	  });
+	});
+	
 	var _Composite = __webpack_require__(/*! ./Composite */ 3);
 	
 	var _Composite2 = _interopRequireDefault(_Composite);
@@ -96,6 +108,8 @@ module.exports =
 	var _Structure2 = _interopRequireDefault(_Structure);
 	
 	var _Redux2 = _interopRequireDefault(_Redux);
+	
+	var _Memoize2 = _interopRequireDefault(_Memoize);
 	
 	var _Reducer = __webpack_require__(/*! ./Composite/Reducer */ 6);
 	
@@ -117,17 +131,17 @@ module.exports =
 	
 	var _Redux4 = _interopRequireDefault(_Redux3);
 	
-	var _Memoize = __webpack_require__(/*! ./Composite/Memoize */ 14);
+	var _Memoize3 = __webpack_require__(/*! ./Composite/Memoize */ 14);
 	
-	var _Memoize2 = _interopRequireDefault(_Memoize);
+	var _Memoize4 = _interopRequireDefault(_Memoize3);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var Defaults = exports.Defaults = { Reducer: _Reducer2.default, Middleware: _Middleware2.default, Equality: _Equality2.default, Subscribe: _Subscribe2.default, Redux: _Redux4.default, Memoize: _Memoize2.default };
+	var Defaults = exports.Defaults = { Reducer: _Reducer2.default, Middleware: _Middleware2.default, Equality: _Equality2.default, Subscribe: _Subscribe2.default, Redux: _Redux4.default, Memoize: _Memoize4.default };
 	var Composite = exports.Composite = function Composite(parameters) {
 	  return new _Composite2.default(parameters);
 	};
-	exports.default = { Composite: Composite, Structure: _Structure2.default, Redux: _Redux2.default, Defaults: Defaults, Wrappers: _Composite.Wrappers };
+	exports.default = { Composite: Composite, Structure: _Structure2.default, Redux: _Redux2.default, Memoize: _Memoize2.default, Defaults: Defaults, Wrappers: _Composite.Wrappers };
 
 /***/ }),
 /* 2 */
@@ -1228,6 +1242,79 @@ module.exports =
 	};
 	
 	exports.default = Redux;
+
+/***/ }),
+/* 16 */
+/*!************************!*\
+  !*** ./src/Memoize.js ***!
+  \************************/
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.Memoize = undefined;
+	
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+	
+	var _walkComposite = __webpack_require__(/*! walk-composite */ 5);
+	
+	var useStructure = function useStructure(memoize) {
+	    return typeof memoize.memoize === 'function' && memoize.structure !== undefined;
+	};
+	
+	var MemoizeWalk = function MemoizeWalk() {
+	    var parameters = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    return (0, _walkComposite.Walk)(_extends({
+	        leafCondition: function leafCondition(memoize) {
+	            return typeof memoize.memoize === 'function' && memoize.structure === undefined;
+	        },
+	        keysMethod: function keysMethod(memoize) {
+	            return _walkComposite.Defaults.KeysMethod(useStructure(memoize) ? memoize.structure : memoize);
+	        },
+	        mutationMethod: function mutationMethod(key) {
+	            return function (memoize, memoizeStructure, getState) {
+	                return [(useStructure(memoize) ? memoize.structure : memoize)[key], function (structure) {
+	                    return structure !== undefined && structure[key] !== undefined ? structure[key] : undefined;
+	                }(useStructure(memoize) ? memoizeStructure.structure : memoizeStructure), function () {
+	                    return getState()[key];
+	                }];
+	            };
+	        },
+	        walkMethod: function walkMethod(parameters) {
+	            return MemoizeWalk(parameters);
+	        }
+	    }, parameters));
+	};
+	
+	var Memoize = exports.Memoize = function Memoize(composite) {
+	    return function (getState) {
+	        var memoize = composite.memoize(getState);
+	        return function (memoizationStructure) {
+	            var structure = MemoizeWalk()(function (memoize, structure, getState) {
+	                return structure === undefined ? undefined : memoize.memoize(function () {
+	                    return structure({
+	                        getState: getState,
+	                        structure: structure
+	                    });
+	                });
+	            })(memoize, memoizationStructure, getState);
+	            return _extends({
+	                structure: structure
+	            }, function (memoizationStructure) {
+	                return typeof memoizationStructure === 'function' ? {
+	                    memoize: memoize.memoize(function () {
+	                        return memoizationStructure({ structure: structure, getState: getState });
+	                    })
+	                } : {};
+	            }(typeof memoizationStructure === 'function' ? memoizationStructure : memoizationStructure.memoize));
+	        };
+	    };
+	};
+	
+	exports.default = Memoize;
 
 /***/ })
 /******/ ]);

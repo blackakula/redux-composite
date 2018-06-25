@@ -1,4 +1,4 @@
-import {Structure, Redux} from '../index';
+import {Structure, Memoize} from '../index';
 import expect from 'expect';
 import {toggle, increment, calculator} from './Reducer';
 import {createStore, applyMiddleware} from 'redux';
@@ -71,14 +71,15 @@ const test2 = (memoize, dispatch) => {
     expect(custom(18, 19)).toEqual(37);
 }
 
-const test3 =  composite => {
+const test3 = composite => {
     let store = createStore(
         composite.reducer,
         {toggle: false, calc: [0, 1]},
         applyMiddleware(composite.middleware)
     );
     let calculated = {total: 0, structure: {toggle: 0, calc: [0, 0]}};
-    const structure = {
+
+    const memoized1 = Memoize(composite)(store.getState)({
         memoize: ({structure}) => {
             calculated.total += 1;
             const {toggle, calc} = structure;
@@ -100,42 +101,50 @@ const test3 =  composite => {
                 }
             ]
         }
-    }
-    const memoize = composite.memoize(store.getState);
-    const redux = composite.redux(undefined, store.getState, undefined).structure;
-    const memoized = {
-        toggle: memoize.structure.toggle.memoize(() => structure.structure.toggle({getState: redux.toggle.redux.getState})),
-        calc: [
-            memoize.structure.calc[0].memoize(() => structure.structure.calc[0]({getState: redux.calc[0].redux.getState})),
-            memoize.structure.calc[1].memoize(() => structure.structure.calc[1]({getState: redux.calc[1].redux.getState}))
-        ]
-    }
-    // Expected this final to be generated
-    const final = {
-        memoize: memoize.memoize(() => structure.memoize({structure: memoized, getState: store.getState})),
-        structure: memoized
-    }
-    const finalMemoize = final.memoize;
+    })
+    const finalMemoize1 = memoized1.memoize;
 
     // Expected behavior
-    expect(finalMemoize()).toEqual(2);
+    expect(finalMemoize1()).toEqual(2);
     expect(calculated).toEqual({total: 1, structure: {toggle: 1, calc: [0, 1]}});
-    expect(finalMemoize()).toEqual(2);
+    expect(finalMemoize1()).toEqual(2);
     expect(calculated).toEqual({total: 1, structure: {toggle: 1, calc: [0, 1]}});
     store.dispatch({type: 'COMPOSITE', composite: {toggle: {type: 'TOGGLE'}}});
-    expect(finalMemoize()).toEqual(-1);
+    expect(finalMemoize1()).toEqual(-1);
     expect(calculated).toEqual({total: 2, structure: {toggle: 2, calc: [1, 1]}});
-    expect(finalMemoize()).toEqual(-1);
+    expect(finalMemoize1()).toEqual(-1);
     expect(calculated).toEqual({total: 2, structure: {toggle: 2, calc: [1, 1]}});
     store.dispatch({type: 'COMPOSITE', composite: {calc: [{type: 'INCREMENT'}]}});
-    expect(finalMemoize()).toEqual(0);
+    expect(finalMemoize1()).toEqual(0);
     expect(calculated).toEqual({total: 3, structure: {toggle: 2, calc: [2, 1]}});
     store.dispatch({type: 'COMPOSITE', composite: {toggle: {type: 'TOGGLE'}, calc: [undefined, {type: 'DECREMENT', value: -5}]}});
-    expect(finalMemoize()).toEqual(7);
+    expect(finalMemoize1()).toEqual(7);
     expect(calculated).toEqual({total: 4, structure: {toggle: 3, calc: [2, 2]}});
     store.dispatch({type: 'COMPOSITE', composite: {toggle: {type: 'TOGGLE'}, calc: [undefined, {type: 'DECREMENT', value: -5}]}});
-    expect(finalMemoize()).toEqual(0);
+    expect(finalMemoize1()).toEqual(0);
     expect(calculated).toEqual({total: 5, structure: {toggle: 4, calc: [2, 2]}});
+
+    const memoized2 = Memoize(composite)(store.getState)({
+        structure: {
+            toggle: ({getState}) => {
+                calculated.structure.toggle += 1;
+                return getState();
+            },
+            calc: [
+                ({getState}) => {
+                    calculated.structure.calc[0] += 1;
+                    return getState() - 1;
+                }
+            ]
+        }
+    }).structure;
+    expect(memoized2.toggle()).toEqual(true);
+    expect(memoized2.calc[0]()).toEqual(0);
+    expect(calculated).toEqual({total: 5, structure: {toggle: 5, calc: [3, 2]}});
+    store.dispatch({type: 'COMPOSITE', composite: {toggle: {type: 'TOGGLE'}}});
+    expect(memoized2.toggle()).toEqual(false);
+    expect(memoized2.calc[0]()).toEqual(0);
+    expect(calculated).toEqual({total: 5, structure: {toggle: 6, calc: [3, 2]}});
 }
 
 const test = () => {
