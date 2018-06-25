@@ -104,8 +104,7 @@ const test3 = createComposite => {
         }
     };
 
-    composite.init(store);
-    const memoizeSimple = composite.memoize;
+    const memoizeSimple = composite.init(store).memoize;
     const memoized1 = memoizeSimple(structureSimple)
     const finalMemoize1 = memoized1.memoize;
 
@@ -156,8 +155,8 @@ const test3 = createComposite => {
     let complexCalculated = {total: 0, increment: 0}
     // reset
     calculated = {total: 0, structure: {toggle: 0, calc: [0, 0]}}
-    complexComposite.init(complexStore)
-    const complexMemoized = complexComposite.memoize({
+
+    const complexMemoized = complexComposite.init(complexStore).memoize({
         memoize: ({structure}) => {
             complexCalculated.total += 1;
             const {increment, reducer} = structure;

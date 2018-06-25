@@ -11,8 +11,8 @@ const composite1 = Structure({
 const highLevelDispatch1 = action => {
     return highLevelState1 = composite1.reducer(highLevelState1, action);
 };
-composite1.init({dispatch: highLevelDispatch1})
-const store1 = composite1.store;
+
+const store1 = composite1.init({dispatch: highLevelDispatch1}).store;
 
 store1.toggle.dispatch({type: 'TOGGLE'}); // highLevelState1 is {toggle: true, child: [1, 2]}
 store1.child[1].dispatch({type: 'INCREMENT'}); // highLevelState1 is {toggle: true, child: [1, 3]}
@@ -25,8 +25,8 @@ const composite2 = Structure({
 const highLevelDispatch2 = action => {
     return highLevelState2 = composite2.reducer(highLevelState2, action);
 };
-composite2.init({dispatch: highLevelDispatch2})
-const store2 = composite2.store;
+
+const store2 = composite2.init({dispatch: highLevelDispatch2}).store;
 
 store2.child.store.dispatch({
     type: 'COMPOSITE',

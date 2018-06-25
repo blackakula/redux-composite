@@ -18,8 +18,7 @@ const test = () => {
         applyMiddleware(composite.middleware)
     );
 
-    composite.init(store);
-    let structure = composite.store;
+    let structure = composite.init(store).store;
 
     // check getState
     expect(structure.toggle.getState()).toEqual(false);
@@ -65,8 +64,8 @@ const test = () => {
         {increment: 2, reducer: {toggle: false, calc: [0, 1]}},
         applyMiddleware(complex.middleware)
     );
-    complex.init(complexStore);
-    structure = complex.store;
+
+    structure = complex.init(complexStore).store;
 
     // check getState
     expect(structure.increment.getState()).toEqual(2);

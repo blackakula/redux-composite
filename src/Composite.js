@@ -135,6 +135,7 @@ class Composite
             composite.getState = store.getState
             composite.dispatch = store.dispatch;
             composite.subscribe = store.subscribe;
+            return composite;
         })(this)
     }
 }

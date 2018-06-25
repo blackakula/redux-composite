@@ -391,6 +391,7 @@ module.exports =
 	            composite.getState = store.getState;
 	            composite.dispatch = store.dispatch;
 	            composite.subscribe = store.subscribe;
+	            return composite;
 	        }(_this);
 	    };
 	};
@@ -7473,8 +7474,7 @@ module.exports =
 	    var composite = createComposite();
 	    var store = (0, _redux.createStore)(composite.reducer, { toggle: false, calc: [0, 1] }, (0, _redux.applyMiddleware)(composite.middleware));
 	
-	    composite.init(store);
-	    var structure = composite.store;
+	    var structure = composite.init(store).store;
 	
 	    // check getState
 	    (0, _expect2.default)(structure.toggle.getState()).toEqual(false);
@@ -7524,8 +7524,8 @@ module.exports =
 	        reducer: createComposite()
 	    });
 	    var complexStore = (0, _redux.createStore)(complex.reducer, { increment: 2, reducer: { toggle: false, calc: [0, 1] } }, (0, _redux.applyMiddleware)(complex.middleware));
-	    complex.init(complexStore);
-	    structure = complex.store;
+	
+	    structure = complex.init(complexStore).store;
 	
 	    // check getState
 	    (0, _expect2.default)(structure.increment.getState()).toEqual(2);
@@ -7716,8 +7716,7 @@ module.exports =
 	        }
 	    };
 	
-	    composite.init(store);
-	    var memoizeSimple = composite.memoize;
+	    var memoizeSimple = composite.init(store).memoize;
 	    var memoized1 = memoizeSimple(structureSimple);
 	    var finalMemoize1 = memoized1.memoize;
 	
@@ -7764,8 +7763,8 @@ module.exports =
 	    var complexCalculated = { total: 0, increment: 0
 	        // reset
 	    };calculated = { total: 0, structure: { toggle: 0, calc: [0, 0] } };
-	    complexComposite.init(complexStore);
-	    var complexMemoized = complexComposite.memoize({
+	
+	    var complexMemoized = complexComposite.init(complexStore).memoize({
 	        memoize: function memoize(_ref5) {
 	            var structure = _ref5.structure;
 	

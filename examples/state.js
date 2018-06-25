@@ -8,8 +8,8 @@ const composite1 = Structure({
     toggle: dummyReducer,
     inc: [dummyReducer, dummyReducer]
 });
-composite1.init({getState: getHighLevelState})
-const store1 = composite1.store;
+
+const store1 = composite1.init({getState: getHighLevelState}).store;
 
 store1.toggle.getState(); // false
 store1.inc[0].getState(); // 1
@@ -19,8 +19,8 @@ const composite2 = Structure({
     toggle: dummyReducer,
     inc: Structure([dummyReducer, dummyReducer])
 });
-composite2.init({getState: getHighLevelState});
-const store2 = composite2.store;
+
+const store2 = composite2.init({getState: getHighLevelState}).store;
 
 store2.toggle.getState(); // false
 store2.inc.store.getState(); // [1, 2]

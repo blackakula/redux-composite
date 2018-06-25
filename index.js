@@ -351,6 +351,7 @@ module.exports =
 	            composite.getState = store.getState;
 	            composite.dispatch = store.dispatch;
 	            composite.subscribe = store.subscribe;
+	            return composite;
 	        }(_this);
 	    };
 	};
