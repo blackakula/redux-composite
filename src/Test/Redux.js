@@ -1,23 +1,25 @@
-import {Structure, Composite, Redux} from '../index';
+import {Structure, Composite} from '../index';
 import expect from 'expect';
 import {createStore, applyMiddleware} from 'redux';
 import {toggle, increment, calculator} from './Reducer';
 
 const test = () => {
-    const composite = Structure({
+    const createComposite = () => Structure({
         toggle,
         calc: [
             increment,
             calculator
         ]
     });
+    const composite = createComposite();
     let store = createStore(
         composite.reducer,
         {toggle: false, calc: [0, 1]},
         applyMiddleware(composite.middleware)
     );
 
-    let structure = Redux(composite)(store);
+    composite.init(store);
+    let structure = composite.store;
 
     // check getState
     expect(structure.toggle.getState()).toEqual(false);
@@ -56,14 +58,15 @@ const test = () => {
 
     const complex = Structure({
         increment,
-        reducer: composite
+        reducer: createComposite()
     });
     let complexStore = createStore(
         complex.reducer,
         {increment: 2, reducer: {toggle: false, calc: [0, 1]}},
         applyMiddleware(complex.middleware)
     );
-    structure = Redux(complex)(complexStore);
+    complex.init(complexStore);
+    structure = complex.store;
 
     // check getState
     expect(structure.increment.getState()).toEqual(2);

@@ -1,4 +1,4 @@
-import {Structure, Redux} from 'redux-composite';
+import {Structure} from 'redux-composite';
 
 const toggle = (state, action) => state === undefined ? false : (action.type === 'TOGGLE' ? !state : state);
 const inc = (state, action) => state === undefined ? 0 : (action.type === 'INCREMENT' ? state + 1 : state);
@@ -18,21 +18,21 @@ const highLevelDispatch = action => {
         listeners.map(listener => listener());
     }
 };
-const redux = Redux(composite)({
+composite.init({
     getState: getHighLevelState,
     subscribe: highLevelSubscribe,
     dispatch: highLevelDispatch
 });
 
 let counter = 0;
-redux.toggle.subscribe(({getState, dispatch}) => {
+composite.store.toggle.subscribe(({getState, dispatch}) => {
     if (getState()) {
         dispatch({type: 'TOGGLE'});
     }
     counter += 1;
 });
 
-composite.subscribe(highLevelDispatch, getHighLevelState, highLevelSubscribe)({
+composite.subscribe({
     toggle: ({getState, dispatch}) => {
         if (!getState()) {
             highLevelDispatch({type: 'COMPOSITE', composite: {inc: {type: 'INCREMENT'}}})
@@ -44,8 +44,8 @@ composite.subscribe(highLevelDispatch, getHighLevelState, highLevelSubscribe)({
         }
     }
 });
-redux.toggle.dispatch({type: 'TOGGLE'}); // counter is 2
-redux.inc.dispatch({type: 'INCREMENT'}); // counter is 4
+composite.store.toggle.dispatch({type: 'TOGGLE'}); // counter is 2
+composite.store.inc.dispatch({type: 'INCREMENT'}); // counter is 4
 highLevelDispatch({type: 'COMPOSITE', composite: {
     toggle: {type: 'TOGGLE'},
     inc: {type: 'INCREMENT'}

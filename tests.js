@@ -117,39 +117,11 @@ module.exports =
 	  });
 	});
 	
-	var _Redux = __webpack_require__(/*! ./Redux */ 15);
-	
-	Object.keys(_Redux).forEach(function (key) {
-	  if (key === "default" || key === "__esModule") return;
-	  Object.defineProperty(exports, key, {
-	    enumerable: true,
-	    get: function get() {
-	      return _Redux[key];
-	    }
-	  });
-	});
-	
-	var _Memoize = __webpack_require__(/*! ./Memoize */ 16);
-	
-	Object.keys(_Memoize).forEach(function (key) {
-	  if (key === "default" || key === "__esModule") return;
-	  Object.defineProperty(exports, key, {
-	    enumerable: true,
-	    get: function get() {
-	      return _Memoize[key];
-	    }
-	  });
-	});
-	
 	var _Composite = __webpack_require__(/*! ./Composite */ 3);
 	
 	var _Composite2 = _interopRequireDefault(_Composite);
 	
 	var _Structure2 = _interopRequireDefault(_Structure);
-	
-	var _Redux2 = _interopRequireDefault(_Redux);
-	
-	var _Memoize2 = _interopRequireDefault(_Memoize);
 	
 	var _Reducer = __webpack_require__(/*! ./Composite/Reducer */ 6);
 	
@@ -167,21 +139,21 @@ module.exports =
 	
 	var _Subscribe2 = _interopRequireDefault(_Subscribe);
 	
-	var _Redux3 = __webpack_require__(/*! ./Composite/Redux */ 13);
+	var _Redux = __webpack_require__(/*! ./Composite/Redux */ 13);
 	
-	var _Redux4 = _interopRequireDefault(_Redux3);
+	var _Redux2 = _interopRequireDefault(_Redux);
 	
-	var _Memoize3 = __webpack_require__(/*! ./Composite/Memoize */ 14);
+	var _Memoize = __webpack_require__(/*! ./Composite/Memoize */ 14);
 	
-	var _Memoize4 = _interopRequireDefault(_Memoize3);
+	var _Memoize2 = _interopRequireDefault(_Memoize);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var Defaults = exports.Defaults = { Reducer: _Reducer2.default, Middleware: _Middleware2.default, Equality: _Equality2.default, Subscribe: _Subscribe2.default, Redux: _Redux4.default, Memoize: _Memoize4.default };
+	var Defaults = exports.Defaults = { Reducer: _Reducer2.default, Middleware: _Middleware2.default, Equality: _Equality2.default, Subscribe: _Subscribe2.default, Redux: _Redux2.default, Memoize: _Memoize2.default };
 	var Composite = exports.Composite = function Composite(parameters) {
 	  return new _Composite2.default(parameters);
 	};
-	exports.default = { Composite: Composite, Structure: _Structure2.default, Redux: _Redux2.default, Memoize: _Memoize2.default, Defaults: Defaults, Wrappers: _Composite.Wrappers };
+	exports.default = { Composite: Composite, Structure: _Structure2.default, Defaults: Defaults, Wrappers: _Composite.Wrappers };
 
 /***/ }),
 /* 2 */
@@ -253,6 +225,14 @@ module.exports =
 	var _Memoize = __webpack_require__(/*! ./Composite/Memoize */ 14);
 	
 	var _Memoize2 = _interopRequireDefault(_Memoize);
+	
+	var _Redux3 = __webpack_require__(/*! ./Redux */ 15);
+	
+	var _Redux4 = _interopRequireDefault(_Redux3);
+	
+	var _Memoize3 = __webpack_require__(/*! ./Memoize */ 16);
+	
+	var _Memoize4 = _interopRequireDefault(_Memoize3);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -334,6 +314,8 @@ module.exports =
 	};
 	
 	var Composite = function Composite(data) {
+	    var _this = this;
+	
 	    _classCallCheck(this, Composite);
 	
 	    var structure = data.structure,
@@ -395,6 +377,22 @@ module.exports =
 	            return Wrappers.Memoize(originalMemoize, equality);
 	        };
 	    }(this.equality));
+	
+	    this.init = function (reduxStore) {
+	        return function (composite) {
+	            composite.memoize = (0, _Memoize4.default)(composite.memoize, reduxStore.getState);
+	
+	            var _InitRedux = (0, _Redux4.default)(composite)(reduxStore),
+	                store = _InitRedux.store,
+	                structure = _InitRedux.structure;
+	
+	            delete composite.redux;
+	            composite.store = structure;
+	            composite.getState = store.getState;
+	            composite.dispatch = store.dispatch;
+	            composite.subscribe = store.subscribe;
+	        }(_this);
+	    };
 	};
 	
 	exports.default = Composite;
@@ -1309,7 +1307,7 @@ module.exports =
 	        structure: WalkRedux(redux)(function (leaf) {
 	            return useStructure(leaf) ? ReduxByRedux(leaf) : leaf.redux;
 	        })(redux),
-	        redux: redux.redux
+	        store: redux.redux
 	    };
 	};
 	
@@ -1318,7 +1316,7 @@ module.exports =
 	        var dispatch = _ref.dispatch,
 	            getState = _ref.getState,
 	            subscribe = _ref.subscribe;
-	        return ReduxByRedux(composite.redux(dispatch, getState, composite.subscribe(dispatch, getState, subscribe))).structure;
+	        return ReduxByRedux(composite.redux(dispatch, getState, composite.subscribe(dispatch, getState, subscribe)));
 	    };
 	};
 	
@@ -1396,8 +1394,8 @@ module.exports =
 	    };
 	};
 	
-	var Memoize = exports.Memoize = function Memoize(composite, getState) {
-	    return MemoizeByMemoize(composite.memoize(getState))(getState);
+	var Memoize = exports.Memoize = function Memoize(memoize, getState) {
+	    return MemoizeByMemoize(memoize(getState))(getState);
 	};
 	
 	exports.default = Memoize;
@@ -7466,13 +7464,17 @@ module.exports =
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var test = function test() {
-	    var composite = (0, _index.Structure)({
-	        toggle: _Reducer.toggle,
-	        calc: [_Reducer.increment, _Reducer.calculator]
-	    });
+	    var createComposite = function createComposite() {
+	        return (0, _index.Structure)({
+	            toggle: _Reducer.toggle,
+	            calc: [_Reducer.increment, _Reducer.calculator]
+	        });
+	    };
+	    var composite = createComposite();
 	    var store = (0, _redux.createStore)(composite.reducer, { toggle: false, calc: [0, 1] }, (0, _redux.applyMiddleware)(composite.middleware));
 	
-	    var structure = (0, _index.Redux)(composite)(store);
+	    composite.init(store);
+	    var structure = composite.store;
 	
 	    // check getState
 	    (0, _expect2.default)(structure.toggle.getState()).toEqual(false);
@@ -7519,10 +7521,11 @@ module.exports =
 	
 	    var complex = (0, _index.Structure)({
 	        increment: _Reducer.increment,
-	        reducer: composite
+	        reducer: createComposite()
 	    });
 	    var complexStore = (0, _redux.createStore)(complex.reducer, { increment: 2, reducer: { toggle: false, calc: [0, 1] } }, (0, _redux.applyMiddleware)(complex.middleware));
-	    structure = (0, _index.Redux)(complex)(complexStore);
+	    complex.init(complexStore);
+	    structure = complex.store;
 	
 	    // check getState
 	    (0, _expect2.default)(structure.increment.getState()).toEqual(2);
@@ -7677,7 +7680,8 @@ module.exports =
 	    (0, _expect2.default)(custom(18, 19)).toEqual(37);
 	};
 	
-	var test3 = function test3(composite) {
+	var test3 = function test3(createComposite) {
+	    var composite = createComposite();
 	    var store = (0, _redux.createStore)(composite.reducer, { toggle: false, calc: [0, 1] }, (0, _redux.applyMiddleware)(composite.middleware));
 	    var calculated = { total: 0, structure: { toggle: 0, calc: [0, 0] } };
 	
@@ -7711,7 +7715,9 @@ module.exports =
 	            }]
 	        }
 	    };
-	    var memoizeSimple = (0, _index.Memoize)(composite, store.getState);
+	
+	    composite.init(store);
+	    var memoizeSimple = composite.memoize;
 	    var memoized1 = memoizeSimple(structureSimple);
 	    var finalMemoize1 = memoized1.memoize;
 	
@@ -7751,14 +7757,15 @@ module.exports =
 	
 	    var complexComposite = (0, _index.Structure)({
 	        increment: _Reducer.increment,
-	        reducer: composite
+	        reducer: createComposite()
 	    });
 	    var complexStore = (0, _redux.createStore)(complexComposite.reducer, { increment: 1, reducer: { toggle: false, calc: [0, 1] } }, (0, _redux.applyMiddleware)(complexComposite.middleware));
 	
 	    var complexCalculated = { total: 0, increment: 0
 	        // reset
 	    };calculated = { total: 0, structure: { toggle: 0, calc: [0, 0] } };
-	    var complexMemoized = (0, _index.Memoize)(complexComposite, complexStore.getState)({
+	    complexComposite.init(complexStore);
+	    var complexMemoized = complexComposite.memoize({
 	        memoize: function memoize(_ref5) {
 	            var structure = _ref5.structure;
 	
@@ -7791,10 +7798,13 @@ module.exports =
 	};
 	
 	var test = function test() {
-	    var composite = (0, _index.Structure)({
-	        toggle: _Reducer.toggle,
-	        calc: [_Reducer.increment, _Reducer.calculator]
-	    });
+	    var createComposite = function createComposite() {
+	        return (0, _index.Structure)({
+	            toggle: _Reducer.toggle,
+	            calc: [_Reducer.increment, _Reducer.calculator]
+	        });
+	    };
+	    var composite = createComposite();
 	    var store = (0, _redux.createStore)(composite.reducer, { toggle: false, calc: [0, 1] }, (0, _redux.applyMiddleware)(composite.middleware));
 	
 	    (0, _expect2.default)(someFunction(2, 3)).toEqual(5);
@@ -7804,7 +7814,7 @@ module.exports =
 	
 	    test2(memoize, store.dispatch);
 	
-	    test3(composite);
+	    test3(createComposite);
 	};
 	
 	exports.default = test;

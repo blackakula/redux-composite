@@ -32,6 +32,6 @@ const MemoizeByMemoize = memoize => getState => {
     }
 }
 
-export const Memoize = (composite, getState) => MemoizeByMemoize(composite.memoize(getState))(getState)
+export const Memoize = (memoize, getState) => MemoizeByMemoize(memoize(getState))(getState)
 
 export default Memoize

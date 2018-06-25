@@ -1,4 +1,4 @@
-import {Structure, Redux} from 'redux-composite';
+import {Structure} from 'redux-composite';
 
 let highLevelState = {toggle: false, inc: [1, 2]};
 const getHighLevelState = () => highLevelState;
@@ -8,21 +8,23 @@ const composite1 = Structure({
     toggle: dummyReducer,
     inc: [dummyReducer, dummyReducer]
 });
-const redux1 = Redux(composite1)({getState: getHighLevelState});
+composite1.init({getState: getHighLevelState})
+const store1 = composite1.store;
 
-redux1.toggle.getState(); // false
-redux1.inc[0].getState(); // 1
-redux1.inc[1].getState(); // 2
+store1.toggle.getState(); // false
+store1.inc[0].getState(); // 1
+store1.inc[1].getState(); // 2
 
 const composite2 = Structure({
     toggle: dummyReducer,
     inc: Structure([dummyReducer, dummyReducer])
 });
-const redux2 = Redux(composite2)({getState: getHighLevelState});
+composite2.init({getState: getHighLevelState});
+const store2 = composite2.store;
 
-redux2.toggle.getState(); // false
-redux2.inc.redux.getState(); // [1, 2]
-redux2.inc.structure[0].getState(); // 1
-redux2.inc.structure[1].getState(); // 2
+store2.toggle.getState(); // false
+store2.inc.store.getState(); // [1, 2]
+store2.inc.structure[0].getState(); // 1
+store2.inc.structure[1].getState(); // 2
 highLevelState.inc[0] = 3;
-redux2.inc.structure[0].getState(); // 3
+store2.inc.structure[0].getState(); // 3

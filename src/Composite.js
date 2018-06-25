@@ -5,6 +5,8 @@ import Equality from './Composite/Equality';
 import Subscribe from './Composite/Subscribe';
 import Redux from './Composite/Redux';
 import Memoize from './Composite/Memoize';
+import InitRedux from './Redux';
+import InitMemoize from './Memoize';
 
 const defaultEquality = (prev, next) => prev === next;
 
@@ -124,6 +126,16 @@ class Composite
             getState => ({memoize: callback => callback}),
             (equality => originalMemoize => Wrappers.Memoize(originalMemoize, equality))(this.equality)
         );
+
+        this.init = reduxStore => (composite => {
+            composite.memoize = InitMemoize(composite.memoize, reduxStore.getState);
+            const {store, structure} = InitRedux(composite)(reduxStore);
+            delete composite.redux;
+            composite.store = structure;
+            composite.getState = store.getState
+            composite.dispatch = store.dispatch;
+            composite.subscribe = store.subscribe;
+        })(this)
     }
 }
 

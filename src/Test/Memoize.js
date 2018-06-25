@@ -1,4 +1,4 @@
-import {Structure, Memoize} from '../index';
+import {Structure} from '../index';
 import expect from 'expect';
 import {toggle, increment, calculator} from './Reducer';
 import {createStore, applyMiddleware} from 'redux';
@@ -71,7 +71,8 @@ const test2 = (memoize, dispatch) => {
     expect(custom(18, 19)).toEqual(37);
 }
 
-const test3 = composite => {
+const test3 = createComposite => {
+    const composite = createComposite();
     let store = createStore(
         composite.reducer,
         {toggle: false, calc: [0, 1]},
@@ -102,7 +103,9 @@ const test3 = composite => {
             ]
         }
     };
-    const memoizeSimple = Memoize(composite, store.getState)
+
+    composite.init(store);
+    const memoizeSimple = composite.memoize;
     const memoized1 = memoizeSimple(structureSimple)
     const finalMemoize1 = memoized1.memoize;
 
@@ -142,7 +145,7 @@ const test3 = composite => {
 
     const complexComposite = Structure({
         increment,
-        reducer: composite
+        reducer: createComposite()
     })
     let complexStore = createStore(
         complexComposite.reducer,
@@ -153,7 +156,8 @@ const test3 = composite => {
     let complexCalculated = {total: 0, increment: 0}
     // reset
     calculated = {total: 0, structure: {toggle: 0, calc: [0, 0]}}
-    const complexMemoized = Memoize(complexComposite, complexStore.getState)({
+    complexComposite.init(complexStore)
+    const complexMemoized = complexComposite.memoize({
         memoize: ({structure}) => {
             complexCalculated.total += 1;
             const {increment, reducer} = structure;
@@ -180,13 +184,14 @@ const test3 = composite => {
 }
 
 const test = () => {
-    const composite = Structure({
+    const createComposite = () => Structure({
         toggle,
         calc: [
             increment,
             calculator
         ]
-    });
+    })
+    const composite = createComposite();
     let store = createStore(
         composite.reducer,
         {toggle: false, calc: [0, 1]},
@@ -200,7 +205,7 @@ const test = () => {
 
     test2(memoize, store.dispatch);
 
-    test3(composite);
+    test3(createComposite);
 };
 
 export default test;

@@ -13,13 +13,13 @@ const WalkRedux = (originalStore, parameters = {}) => Walk({
 
 const ReduxByRedux = redux => ({
     structure: WalkRedux(redux)(leaf => useStructure(leaf) ? ReduxByRedux(leaf) : leaf.redux)(redux),
-    redux: redux.redux
+    store: redux.redux
 });
 
 export const Redux = composite => ({dispatch, getState, subscribe}) => ReduxByRedux(composite.redux(
     dispatch,
     getState,
     composite.subscribe(dispatch, getState, subscribe)
-)).structure
+))
 
 export default Redux;
