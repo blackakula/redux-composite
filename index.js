@@ -284,7 +284,8 @@ module.exports =
 	        equality = data.equality,
 	        subscribe = data.subscribe,
 	        redux = data.redux,
-	        memoize = data.memoize;
+	        memoize = data.memoize,
+	        init = data.init;
 	
 	
 	    if (structure === undefined && typeof reducer !== 'function') {
@@ -340,11 +341,15 @@ module.exports =
 	
 	    this.init = function (reduxStore) {
 	        return function (composite) {
-	            composite.memoize = (0, _Memoize4.default)(composite.memoize, reduxStore.getState);
+	            composite.memoize = function (memoize) {
+	                return memoize(composite.memoize, reduxStore.getState);
+	            }(init !== undefined && typeof init.memoize === 'function' ? init.memoize : _Memoize4.default);
 	
-	            var _InitRedux = (0, _Redux4.default)(composite)(reduxStore),
-	                store = _InitRedux.store,
-	                structure = _InitRedux.structure;
+	            var _ref2 = function (store) {
+	                return store(composite)(reduxStore);
+	            }(init !== undefined && typeof init.store === 'function' ? init.store : _Redux4.default),
+	                store = _ref2.store,
+	                structure = _ref2.structure;
 	
 	            delete composite.redux;
 	            composite.store = structure;

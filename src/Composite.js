@@ -64,7 +64,7 @@ export const Wrappers = {
 class Composite
 {
     constructor(data) {
-        const {structure, reducer, middleware, equality, subscribe, redux, memoize} = data;
+        const {structure, reducer, middleware, equality, subscribe, redux, memoize, init} = data;
 
         if (structure === undefined && typeof reducer !== 'function') {
             throw {
@@ -128,8 +128,12 @@ class Composite
         );
 
         this.init = reduxStore => (composite => {
-            composite.memoize = InitMemoize(composite.memoize, reduxStore.getState);
-            const {store, structure} = InitRedux(composite)(reduxStore);
+            composite.memoize = (memoize => memoize(composite.memoize, reduxStore.getState))(
+                init !== undefined && typeof init.memoize === 'function' ? init.memoize : InitMemoize
+            );
+            const {store, structure} = (store => store(composite)(reduxStore))(
+                init !== undefined && typeof init.store === 'function' ? init.store : InitRedux
+            );
             delete composite.redux;
             composite.store = structure;
             composite.getState = store.getState
