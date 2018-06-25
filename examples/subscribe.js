@@ -25,7 +25,7 @@ const redux = Redux(composite)({
 });
 
 let counter = 0;
-redux.toggle.redux.subscribe(({getState, dispatch}) => {
+redux.toggle.subscribe(({getState, dispatch}) => {
     if (getState()) {
         dispatch({type: 'TOGGLE'});
     }
@@ -44,8 +44,8 @@ composite.subscribe(highLevelDispatch, getHighLevelState, highLevelSubscribe)({
         }
     }
 });
-redux.toggle.redux.dispatch({type: 'TOGGLE'}); // counter is 2
-redux.inc.redux.dispatch({type: 'INCREMENT'}); // counter is 4
+redux.toggle.dispatch({type: 'TOGGLE'}); // counter is 2
+redux.inc.dispatch({type: 'INCREMENT'}); // counter is 4
 highLevelDispatch({type: 'COMPOSITE', composite: {
     toggle: {type: 'TOGGLE'},
     inc: {type: 'INCREMENT'}

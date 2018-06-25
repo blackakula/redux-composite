@@ -10,9 +10,9 @@ const composite1 = Structure({
 });
 const redux1 = Redux(composite1)({getState: getHighLevelState});
 
-redux1.toggle.redux.getState(); // false
-redux1.inc[0].redux.getState(); // 1
-redux1.inc[1].redux.getState(); // 2
+redux1.toggle.getState(); // false
+redux1.inc[0].getState(); // 1
+redux1.inc[1].getState(); // 2
 
 const composite2 = Structure({
     toggle: dummyReducer,
@@ -20,9 +20,9 @@ const composite2 = Structure({
 });
 const redux2 = Redux(composite2)({getState: getHighLevelState});
 
-redux2.toggle.redux.getState(); // false
+redux2.toggle.getState(); // false
 redux2.inc.redux.getState(); // [1, 2]
-redux2.inc.structure[0].redux.getState(); // 1
-redux2.inc.structure[1].redux.getState(); // 2
+redux2.inc.structure[0].getState(); // 1
+redux2.inc.structure[1].getState(); // 2
 highLevelState.inc[0] = 3;
-redux2.inc.structure[0].redux.getState(); // 3
+redux2.inc.structure[0].getState(); // 3

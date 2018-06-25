@@ -1225,19 +1225,60 @@ module.exports =
 /*!**********************!*\
   !*** ./src/Redux.js ***!
   \**********************/
-/***/ (function(module, exports) {
+/***/ (function(module, exports, __webpack_require__) {
 
-	"use strict";
+	'use strict';
 	
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
+	exports.Redux = undefined;
+	
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
+	var _walkComposite = __webpack_require__(/*! walk-composite */ 5);
+	
+	var useStructure = function useStructure(node) {
+	    return _typeof(node.redux) === 'object' && node.structure !== undefined;
+	};
+	
+	var WalkRedux = function WalkRedux(originalStore) {
+	    var parameters = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+	    return (0, _walkComposite.Walk)(_extends({
+	        leafCondition: function leafCondition(node) {
+	            return node.redux !== undefined && (node.structure === undefined || originalStore !== node);
+	        },
+	        keysMethod: function keysMethod(node) {
+	            return _walkComposite.Defaults.KeysMethod(useStructure(node) ? node.structure : node);
+	        },
+	        mutationMethod: function mutationMethod(key) {
+	            return function (node) {
+	                return [(useStructure(node) ? node.structure : node)[key]];
+	            };
+	        },
+	        walkMethod: function walkMethod(parameters) {
+	            return WalkRedux(originalStore, parameters);
+	        }
+	    }, parameters));
+	};
+	
+	var ReduxByRedux = function ReduxByRedux(redux) {
+	    return {
+	        structure: WalkRedux(redux)(function (leaf) {
+	            return useStructure(leaf) ? ReduxByRedux(leaf) : leaf.redux;
+	        })(redux),
+	        redux: redux.redux
+	    };
+	};
+	
 	var Redux = exports.Redux = function Redux(composite) {
 	    return function (_ref) {
 	        var dispatch = _ref.dispatch,
 	            getState = _ref.getState,
 	            subscribe = _ref.subscribe;
-	        return composite.redux(dispatch, getState, composite.subscribe(dispatch, getState, subscribe)).structure;
+	        return ReduxByRedux(composite.redux(dispatch, getState, composite.subscribe(dispatch, getState, subscribe))).structure;
 	    };
 	};
 	
