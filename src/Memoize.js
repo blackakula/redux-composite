@@ -11,6 +11,10 @@ const MemoizeWalk = (originalMemoize, parameters = {}) => Walk({
         (structure => structure !== undefined && structure[key] !== undefined ? structure[key] : undefined)(useStructure(memoize) ? memoizeStructure.structure : memoizeStructure),
         () => getState()[key]
     ],
+    reducerMethod: {
+        add: Defaults.ReducerMethod.add,
+        init: memoize => Defaults.ReducerMethod.init(useStructure(memoize) ? memoize.structure : memoize)
+    },
     walkMethod: parameters => MemoizeWalk(originalMemoize, parameters),
     ...parameters
 })

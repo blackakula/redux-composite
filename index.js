@@ -1336,6 +1336,12 @@ module.exports =
 	                }];
 	            };
 	        },
+	        reducerMethod: {
+	            add: _walkComposite.Defaults.ReducerMethod.add,
+	            init: function init(memoize) {
+	                return _walkComposite.Defaults.ReducerMethod.init(useStructure(memoize) ? memoize.structure : memoize);
+	            }
+	        },
 	        walkMethod: function walkMethod(parameters) {
 	            return MemoizeWalk(originalMemoize, parameters);
 	        }
