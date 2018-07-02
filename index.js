@@ -349,16 +349,15 @@ module.exports =
 	
 	    this.init = function (reduxStore) {
 	        return function (composite) {
-	            composite.memoize = function (memoize) {
-	                return memoize(composite.memoize, reduxStore.getState);
-	            }(init !== undefined && typeof init.memoize === 'function' ? init.memoize : _Memoize4.default);
-	
 	            var _ref2 = function (store) {
 	                return store(composite)(reduxStore);
 	            }(init !== undefined && typeof init.store === 'function' ? init.store : _Redux4.default),
 	                store = _ref2.store,
 	                structure = _ref2.structure;
 	
+	            composite.memoize = function (memoize) {
+	                return memoize(composite.memoize, store);
+	            }(init !== undefined && typeof init.memoize === 'function' ? init.memoize : _Memoize4.default);
 	            delete composite.redux;
 	            composite.store = structure;
 	            composite.getState = store.getState;
@@ -1314,6 +1313,10 @@ module.exports =
 	
 	var _walkComposite = __webpack_require__(/*! walk-composite */ 5);
 	
+	var _ReduxAction = __webpack_require__(/*! ./Helper/ReduxAction */ 7);
+	
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+	
 	var useStructure = function useStructure(memoize) {
 	    return typeof memoize.memoize === 'function' && memoize.structure !== undefined;
 	};
@@ -1328,11 +1331,13 @@ module.exports =
 	            return _walkComposite.Defaults.KeysMethod(useStructure(memoize) ? memoize.structure : memoize);
 	        },
 	        mutationMethod: function mutationMethod(key) {
-	            return function (memoize, memoizeStructure, getState) {
+	            return function (memoize, memoizeStructure, dispatch, getState, subscribe) {
 	                return [(useStructure(memoize) ? memoize.structure : memoize)[key], function (structure) {
 	                    return structure !== undefined && structure[key] !== undefined ? structure[key] : undefined;
-	                }(useStructure(memoize) ? memoizeStructure.structure : memoizeStructure), function () {
+	                }(useStructure(memoize) ? memoizeStructure.structure : memoizeStructure), (0, _ReduxAction.MutateMethod)(dispatch, key), function () {
 	                    return getState()[key];
+	                }, function (listeners) {
+	                    return subscribe(_defineProperty({}, key, listeners));
 	                }];
 	            };
 	        },
@@ -1349,24 +1354,30 @@ module.exports =
 	};
 	
 	var MemoizeByMemoize = function MemoizeByMemoize(memoize) {
-	    return function (getState) {
+	    return function (_ref) {
+	        var dispatch = _ref.dispatch,
+	            getState = _ref.getState,
+	            subscribe = _ref.subscribe;
+	
 	        return function (memoizationStructure) {
-	            var structure = MemoizeWalk(memoize)(function (memoize, structure, getState) {
+	            var structure = MemoizeWalk(memoize)(function (memoize, structure, dispatch, getState, subscribe) {
 	                return structure === undefined ? undefined : function (memoized) {
-	                    return memoize.structure === undefined ? memoized : MemoizeByMemoize(memoize)(getState)(structure);
+	                    return memoize.structure === undefined ? memoized : MemoizeByMemoize(memoize)({ dispatch: dispatch, getState: getState, subscribe: subscribe })(structure);
 	                }(memoize.memoize(function () {
 	                    return structure({
+	                        dispatch: dispatch,
 	                        getState: getState,
-	                        structure: structure
+	                        structure: structure,
+	                        subscribe: subscribe
 	                    });
 	                }));
-	            })(memoize, memoizationStructure, getState);
+	            })(memoize, memoizationStructure, dispatch, getState, subscribe);
 	            return _extends({
 	                structure: structure
 	            }, function (memoizationStructure) {
 	                return typeof memoizationStructure === 'function' ? {
 	                    memoize: memoize.memoize(function () {
-	                        return memoizationStructure({ structure: structure, getState: getState });
+	                        return memoizationStructure({ structure: structure, dispatch: dispatch, getState: getState, subscribe: subscribe });
 	                    })
 	                } : {};
 	            }(typeof memoizationStructure === 'function' ? memoizationStructure : memoizationStructure.memoize));
@@ -1374,8 +1385,8 @@ module.exports =
 	    };
 	};
 	
-	var Memoize = exports.Memoize = function Memoize(memoize, getState) {
-	    return MemoizeByMemoize(memoize(getState))(getState);
+	var Memoize = exports.Memoize = function Memoize(memoize, store) {
+	    return MemoizeByMemoize(memoize(store.getState))(store);
 	};
 	
 	exports.default = Memoize;

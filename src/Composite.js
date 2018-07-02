@@ -128,11 +128,11 @@ class Composite
         );
 
         this.init = reduxStore => (composite => {
-            composite.memoize = (memoize => memoize(composite.memoize, reduxStore.getState))(
-                init !== undefined && typeof init.memoize === 'function' ? init.memoize : InitMemoize
-            );
             const {store, structure} = (store => store(composite)(reduxStore))(
                 init !== undefined && typeof init.store === 'function' ? init.store : InitRedux
+            );
+            composite.memoize = (memoize => memoize(composite.memoize, store))(
+                init !== undefined && typeof init.memoize === 'function' ? init.memoize : InitMemoize
             );
             delete composite.redux;
             composite.store = structure;
