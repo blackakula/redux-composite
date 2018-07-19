@@ -332,8 +332,7 @@ module.exports =
 	        equality = data.equality,
 	        subscribe = data.subscribe,
 	        redux = data.redux,
-	        memoize = data.memoize,
-	        init = data.init;
+	        memoize = data.memoize;
 	
 	
 	    if (structure === undefined && typeof reducer !== 'function') {
@@ -388,6 +387,7 @@ module.exports =
 	    }(this.equality));
 	
 	    this.init = function (reduxStore) {
+	        var init = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 	        return function (composite) {
 	            var _ref2 = function (store) {
 	                return store(composite)(reduxStore);
