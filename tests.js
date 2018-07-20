@@ -78,6 +78,10 @@ module.exports =
 	
 	var _ReduxThunk2 = _interopRequireDefault(_ReduxThunk);
 	
+	var _Prettify = __webpack_require__(/*! ./Test/Prettify */ 80);
+	
+	var _Prettify2 = _interopRequireDefault(_Prettify);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var tests = function tests() {
@@ -88,6 +92,7 @@ module.exports =
 	    (0, _Redux2.default)();
 	    (0, _Memoize2.default)();
 	    (0, _ReduxThunk2.default)();
+	    (0, _Prettify2.default)();
 	};
 	tests();
 
@@ -7997,6 +8002,197 @@ module.exports =
 	thunk.withExtraArgument = createThunkMiddleware;
 	
 	exports['default'] = thunk;
+
+/***/ }),
+/* 80 */
+/*!******************************!*\
+  !*** ./src/Test/Prettify.js ***!
+  \******************************/
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.test = undefined;
+	
+	var _Reduce = __webpack_require__(/*! ../Prettify/Reduce */ 81);
+	
+	var _Reduce2 = _interopRequireDefault(_Reduce);
+	
+	var _Expand = __webpack_require__(/*! ../Prettify/Expand */ 82);
+	
+	var _Expand2 = _interopRequireDefault(_Expand);
+	
+	var _expect = __webpack_require__(/*! expect */ 18);
+	
+	var _expect2 = _interopRequireDefault(_expect);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	var test = exports.test = function test() {
+	    var reduced1 = { type: 'ACTION1\\{a}\\[1]\nACTION2\\{b}', payload: { '{b}': { data: 'SOMETHING' } } };
+	    var expanded1 = { type: 'COMPOSITE', composite: {
+	            a: [, { type: 'ACTION1' }],
+	            b: { type: 'ACTION2', data: 'SOMETHING' }
+	        } };
+	    var reduced2 = { type: 'SOME_ACTION', data: 'SOMETHING' };
+	    var expanded2 = reduced2;
+	    (0, _expect2.default)((0, _Reduce2.default)(expanded1)).toEqual(reduced1);
+	    (0, _expect2.default)((0, _Reduce2.default)(expanded2)).toEqual(reduced2);
+	    (0, _expect2.default)((0, _Expand2.default)(reduced1)).toEqual(expanded1);
+	    (0, _expect2.default)((0, _Expand2.default)(reduced2)).toEqual(expanded2);
+	};
+	
+	exports.default = test;
+
+/***/ }),
+/* 81 */
+/*!********************************!*\
+  !*** ./src/Prettify/Reduce.js ***!
+  \********************************/
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.Reduce = undefined;
+	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
+	var _walkComposite = __webpack_require__(/*! walk-composite */ 5);
+	
+	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+	
+	var Reduce = function Reduce(action) {
+	    var actions = [];
+	    var payload = undefined;
+	    if ((typeof action === 'undefined' ? 'undefined' : _typeof(action)) !== 'object' || action === null || action.type !== 'COMPOSITE' || _typeof(action.composite) !== 'object') {
+	        return action;
+	    }
+	    (0, _walkComposite.Walk)({
+	        keysMethod: function keysMethod(action, path) {
+	            var type = action.type,
+	                rest = _objectWithoutProperties(action, ['type']);
+	
+	            if (type !== undefined) {
+	                actions.push(type + '\\' + path);
+	                if (Object.keys(rest).length !== 0) {
+	                    if (payload === undefined) {
+	                        payload = {};
+	                    }
+	                    payload[path] = rest;
+	                }
+	            }
+	            return _walkComposite.Defaults.KeysMethod(rest);
+	        },
+	        mutationMethod: function mutationMethod(key) {
+	            return function (action, path) {
+	                return [_walkComposite.Defaults.MutationMethod(key)(action)[0], function (key) {
+	                    return path === '' ? key : path + '\\' + key;
+	                }(Array.isArray(action) ? '[' + key + ']' : '{' + key + '}')];
+	            };
+	        }
+	    })(function () {})(action.composite, '');
+	    return { type: actions.join('\n'), payload: payload };
+	};
+	
+	exports.Reduce = Reduce;
+	exports.default = Reduce;
+
+/***/ }),
+/* 82 */
+/*!********************************!*\
+  !*** ./src/Prettify/Expand.js ***!
+  \********************************/
+/***/ (function(module, exports) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+	
+	function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
+	
+	var check = function check(string) {
+	    if (/^\[.*\]$/.test(string)) {
+	        return false;
+	    }
+	    if (/^\{.*\}$/.test(string)) {
+	        return true;
+	    }
+	
+	    return undefined;
+	};
+	
+	var Expand = exports.Expand = function Expand(action) {
+	    if ((typeof action === 'undefined' ? 'undefined' : _typeof(action)) !== 'object' || action === null || typeof action.type !== 'string') {
+	        return action;
+	    }
+	    try {
+	        var compositeChecked = undefined,
+	            composite = undefined;
+	        var actions = action.type.split('\n').map(function (a) {
+	            var _a$split = a.split('\\'),
+	                _a$split2 = _toArray(_a$split),
+	                type = _a$split2[0],
+	                path = _a$split2.slice(1);
+	
+	            if (type === undefined) {
+	                throw {
+	                    message: 'action.type is undefined - use format "ACTION_TYPE\\{key1}\\[key2]\\{key3}"',
+	                    type: type
+	                };
+	            }
+	            if (path.length === 0) {
+	                throw {
+	                    message: 'path for composite is not defined - use format "ACTION_TYPE\\{key1}\\[key2]\\{key3}"',
+	                    type: a
+	                };
+	            }
+	            var result = _extends({ type: type }, _typeof(action.payload) === 'object' && action.payload !== null && _typeof(action.payload[path.join()]) === 'object' && action.payload[path.join()] !== null ? action.payload[path.join()] : {});
+	            var lastChecked = true;
+	            path.reverse().map(function (item) {
+	                var checked = check(item);
+	                if (checked === undefined) {
+	                    throw {
+	                        message: 'path item is not in the right format: should be either {key} or [key]',
+	                        item: item
+	                    };
+	                }
+	                lastChecked = checked;
+	                checked = checked ? {} : [];
+	                checked[item.substr(1, item.length - 2)] = result;
+	                result = checked;
+	            });
+	            if (compositeChecked === undefined) {
+	                compositeChecked = lastChecked;
+	                composite = compositeChecked ? {} : [];
+	            } else if (compositeChecked !== lastChecked) {
+	                throw {
+	                    message: 'inconsistency in action paths: [] !== {}'
+	                };
+	            }
+	            composite = compositeChecked ? _extends({}, composite, result) : [].concat(_toConsumableArray(composite), _toConsumableArray(result));
+	        });
+	        return { type: 'COMPOSITE', composite: composite };
+	    } catch (e) {
+	        console.warn('Action could not be expanded', e, action);
+	        return action;
+	    }
+	};
+	
+	exports.default = Expand;
 
 /***/ })
 /******/ ]);

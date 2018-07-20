@@ -5,6 +5,7 @@ import TestSubscribe from './Test/Subscribe';
 import TestRedux from './Test/Redux';
 import TestMemoize from './Test/Memoize';
 import TestReduxThunk from './Test/ReduxThunk';
+import TestPrettify from './Test/Prettify';
 
 const tests = () => {
     TestReducer();
@@ -14,5 +15,6 @@ const tests = () => {
     TestRedux();
     TestMemoize();
     TestReduxThunk();
+    TestPrettify();
 };
 tests();
