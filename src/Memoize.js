@@ -14,7 +14,11 @@ const MemoizeWalk = (originalMemoize, parameters = {}) => Walk({
             (structure => structure !== undefined && structure[key] !== undefined ? structure[key] : undefined)(useStructure(memoize) ? memoizeStructure.structure : memoizeStructure),
             MutateMethod(dispatch, key, structure),
             () => getState()[key],
-            listeners => subscribe({[key]: listeners})
+            listeners => {
+                let arg = Array.isArray(structure) ? [] : {};
+                arg[key] = listeners;
+                return subscribe(arg)
+            }
         ]
     },
     reducerMethod: {

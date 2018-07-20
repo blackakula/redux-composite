@@ -9,7 +9,11 @@ const Redux = compositeStructure => (dispatch, getState, subscribe) => {
             DefaultMutationMethod(key)(composite),
             MutateMethod(dispatch, key, composite),
             () => getState()[key],
-            listeners => subscribe({[key]: listeners})
+            listeners => {
+                let arg = Array.isArray(composite) ? [] : {};
+                arg[key] = listeners;
+                return subscribe(arg)
+            }
         ]
     })(
         (composite, dispatch, getState, subscribe) => composite.redux(dispatch, getState, subscribe)

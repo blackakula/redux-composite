@@ -1252,8 +1252,6 @@ module.exports =
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-	
 	var Redux = function Redux(compositeStructure) {
 	    return function (dispatch, getState, subscribe) {
 	        var redux = { dispatch: dispatch, getState: getState, subscribe: subscribe };
@@ -1263,7 +1261,9 @@ module.exports =
 	                    return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _ReduxAction.MutateMethod)(dispatch, key, composite), function () {
 	                        return getState()[key];
 	                    }, function (listeners) {
-	                        return subscribe(_defineProperty({}, key, listeners));
+	                        var arg = Array.isArray(composite) ? [] : {};
+	                        arg[key] = listeners;
+	                        return subscribe(arg);
 	                    }];
 	                };
 	            }
@@ -1411,8 +1411,6 @@ module.exports =
 	
 	var _ReduxAction = __webpack_require__(/*! ./Helper/ReduxAction */ 7);
 	
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-	
 	var useStructure = function useStructure(memoize) {
 	    return typeof memoize.memoize === 'function' && memoize.structure !== undefined;
 	};
@@ -1434,7 +1432,9 @@ module.exports =
 	                }(useStructure(memoize) ? memoizeStructure.structure : memoizeStructure), (0, _ReduxAction.MutateMethod)(dispatch, key, structure), function () {
 	                    return getState()[key];
 	                }, function (listeners) {
-	                    return subscribe(_defineProperty({}, key, listeners));
+	                    var arg = Array.isArray(structure) ? [] : {};
+	                    arg[key] = listeners;
+	                    return subscribe(arg);
 	                }];
 	            };
 	        },
