@@ -1,14 +1,3 @@
-const check = string => {
-    if (/^\[.*\]$/.test(string)) {
-        return false;
-    }
-    if (/^\{.*\}$/.test(string)) {
-        return true;
-    }
-
-    return undefined;
-}
-
 export const Expand = action => {
     if (typeof action !== 'object' || action === null || typeof action.type !== 'string') {
         return action;
@@ -29,10 +18,13 @@ export const Expand = action => {
                     type: a
                 }
             }
-            let result = {type, ...(typeof action.payload === 'object' && action.payload !== null && typeof action.payload[path.join()] === 'object' && action.payload[path.join()] !== null ? action.payload[path.join()] : {})};
+            let result = {
+                type,
+                ...((p => typeof action.payload === 'object' && action.payload !== null && typeof action.payload[p] === 'object' && action.payload[p] !== null ? action.payload[p] : {})(path.join('\\')))
+            };
             let lastChecked = true;
             path.reverse().map(item => {
-                let checked = check(item);
+                let checked = /^\{.*\}$/.test(item) ? true : (/^\[.*\]$/.test(item) ? false : undefined );
                 if (checked === undefined) {
                     throw {
                         message: 'path item is not in the right format: should be either {key} or [key]',
@@ -56,7 +48,7 @@ export const Expand = action => {
         })
         return {type: 'COMPOSITE', composite};
     } catch (e) {
-        console.warn('Action could not be expanded', e, action);
+        // console.warn('Action could not be expanded', e, action);
         return action;
     }
 }

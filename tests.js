@@ -50,35 +50,35 @@ module.exports =
 
 	'use strict';
 	
-	var _Reducer = __webpack_require__(/*! ./Test/Reducer */ 17);
+	var _Reducer = __webpack_require__(/*! ./Test/Reducer */ 19);
 	
 	var _Reducer2 = _interopRequireDefault(_Reducer);
 	
-	var _Middleware = __webpack_require__(/*! ./Test/Middleware */ 51);
+	var _Middleware = __webpack_require__(/*! ./Test/Middleware */ 53);
 	
 	var _Middleware2 = _interopRequireDefault(_Middleware);
 	
-	var _Equality = __webpack_require__(/*! ./Test/Equality */ 73);
+	var _Equality = __webpack_require__(/*! ./Test/Equality */ 75);
 	
 	var _Equality2 = _interopRequireDefault(_Equality);
 	
-	var _Subscribe = __webpack_require__(/*! ./Test/Subscribe */ 74);
+	var _Subscribe = __webpack_require__(/*! ./Test/Subscribe */ 76);
 	
 	var _Subscribe2 = _interopRequireDefault(_Subscribe);
 	
-	var _Redux = __webpack_require__(/*! ./Test/Redux */ 75);
+	var _Redux = __webpack_require__(/*! ./Test/Redux */ 77);
 	
 	var _Redux2 = _interopRequireDefault(_Redux);
 	
-	var _Memoize = __webpack_require__(/*! ./Test/Memoize */ 76);
+	var _Memoize = __webpack_require__(/*! ./Test/Memoize */ 78);
 	
 	var _Memoize2 = _interopRequireDefault(_Memoize);
 	
-	var _ReduxThunk = __webpack_require__(/*! ./Test/ReduxThunk */ 78);
+	var _ReduxThunk = __webpack_require__(/*! ./Test/ReduxThunk */ 80);
 	
 	var _ReduxThunk2 = _interopRequireDefault(_ReduxThunk);
 	
-	var _Prettify = __webpack_require__(/*! ./Test/Prettify */ 80);
+	var _Prettify = __webpack_require__(/*! ./Test/Prettify */ 82);
 	
 	var _Prettify2 = _interopRequireDefault(_Prettify);
 	
@@ -160,9 +160,17 @@ module.exports =
 	
 	var _Memoize4 = _interopRequireDefault(_Memoize3);
 	
+	var _Reduce = __webpack_require__(/*! ./Prettify/Reduce */ 17);
+	
+	var _Reduce2 = _interopRequireDefault(_Reduce);
+	
+	var _Expand = __webpack_require__(/*! ./Prettify/Expand */ 18);
+	
+	var _Expand2 = _interopRequireDefault(_Expand);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var Defaults = exports.Defaults = { Reducer: _Reducer2.default, Middleware: _Middleware2.default, Equality: _Equality2.default, Subscribe: _Subscribe2.default, Redux: _Redux2.default, Memoize: _Memoize2.default, Init: { Store: _Redux4.default, Memoize: _Memoize4.default } };
+	var Defaults = exports.Defaults = { Reducer: _Reducer2.default, Middleware: _Middleware2.default, Equality: _Equality2.default, Subscribe: _Subscribe2.default, Redux: _Redux2.default, Memoize: _Memoize2.default, Init: { Store: _Redux4.default, Memoize: _Memoize4.default }, Prettify: { Reduce: _Reduce2.default, Expand: _Expand2.default } };
 	var Composite = exports.Composite = function Composite(parameters) {
 	  return new _Composite2.default(parameters);
 	};
@@ -246,6 +254,14 @@ module.exports =
 	var _Memoize3 = __webpack_require__(/*! ./Memoize */ 16);
 	
 	var _Memoize4 = _interopRequireDefault(_Memoize3);
+	
+	var _Reduce = __webpack_require__(/*! ./Prettify/Reduce */ 17);
+	
+	var _Reduce2 = _interopRequireDefault(_Reduce);
+	
+	var _Expand = __webpack_require__(/*! ./Prettify/Expand */ 18);
+	
+	var _Expand2 = _interopRequireDefault(_Expand);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -347,7 +363,13 @@ module.exports =
 	    }
 	
 	    var compositeStructure = structure === undefined ? undefined : (0, _WalkComposite2.default)({}, true)(function (leaf) {
-	        return typeof leaf === 'function' ? new Composite({ reducer: leaf }) : leaf;
+	        if (typeof leaf === 'function') {
+	            return new Composite({ reducer: leaf });
+	        }
+	        if (leaf instanceof Composite && typeof leaf.uglify === 'function') {
+	            leaf.uglify();
+	        }
+	        return leaf;
 	    })(structure);
 	
 	    var injection = function injection(parameter, withStructure, withoutStructure, wrapper) {
@@ -391,14 +413,43 @@ module.exports =
 	        };
 	    }(this.equality));
 	
+	    this.prettify = function () {
+	        var _ref2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+	            reduce = _ref2.reduce,
+	            expand = _ref2.expand;
+	
+	        reduce = typeof reduce === 'function' ? reduce : _Reduce2.default;
+	        expand = typeof expand === 'function' ? expand : _Expand2.default;
+	        var r = _this.reducer;
+	        var m = _this.middleware;
+	        _this.reducer = function (state, action) {
+	            return r(state, expand(action));
+	        };
+	        _this.middleware = function (store) {
+	            return function (next) {
+	                return function (action) {
+	                    return m(store)(function (action) {
+	                        return next(reduce(action));
+	                    })(action);
+	                };
+	            };
+	        };
+	        delete _this.prettify;
+	        _this.uglify = function () {
+	            _this.reducer = r;
+	            _this.middleware = m;
+	            delete _this.uglify;
+	        };
+	    };
+	
 	    this.init = function (reduxStore) {
 	        var init = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 	        return function (composite) {
-	            var _ref2 = function (store) {
+	            var _ref3 = function (store) {
 	                return store(composite)(reduxStore);
 	            }(init !== undefined && typeof init.store === 'function' ? init.store : _Redux4.default),
-	                store = _ref2.store,
-	                structure = _ref2.structure;
+	                store = _ref3.store,
+	                structure = _ref3.structure;
 	
 	            composite.memoize = function (memoize) {
 	                return memoize(composite.memoize, store);
@@ -945,8 +996,6 @@ module.exports =
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-	
 	var ReduxAction = function ReduxAction(action) {
 	    return (typeof action === 'undefined' ? 'undefined' : _typeof(action)) === 'object' && action.type === 'COMPOSITE' ? action.composite : action;
 	};
@@ -955,9 +1004,11 @@ module.exports =
 	        return callback({ type: 'COMPOSITE', composite: action });
 	    };
 	};
-	var MutateMethod = function MutateMethod(callback, key) {
+	var MutateMethod = function MutateMethod(callback, key, structure) {
 	    return function (action) {
-	        return callback(_defineProperty({}, key, action));
+	        var arg = Array.isArray(structure) ? [] : {};
+	        arg[key] = action;
+	        return callback(arg);
 	    };
 	};
 	var ActionMutateMethod = function ActionMutateMethod(action, key) {
@@ -1033,7 +1084,7 @@ module.exports =
 	            var initNextMiddleware = (0, _WalkComposite2.default)({
 	                mutationMethod: function mutationMethod(key) {
 	                    return function (composite, next, middleware) {
-	                        return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _ReduxAction.MutateMethod)(next, key), (0, _DefaultMutationMethod2.default)(key)(middleware)];
+	                        return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _ReduxAction.MutateMethod)(next, key, composite), (0, _DefaultMutationMethod2.default)(key)(middleware)];
 	                    };
 	                }
 	            })(function (composite, next, middleware) {
@@ -1090,7 +1141,7 @@ module.exports =
 	                    other[_key - 3] = arguments[_key];
 	                }
 	
-	                return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _ReduxAction.MutateMethod)(dispatch, key), function () {
+	                return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _ReduxAction.MutateMethod)(dispatch, key, composite), function () {
 	                    return getState()[key];
 	                }].concat(_toConsumableArray(_walkComposite.Defaults.MutationMethod(key).apply(undefined, other)));
 	            };
@@ -1209,7 +1260,7 @@ module.exports =
 	        var structure = (0, _WalkComposite2.default)({
 	            mutationMethod: function mutationMethod(key) {
 	                return function (composite, dispatch, getState, subscribe) {
-	                    return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _ReduxAction.MutateMethod)(dispatch, key), function () {
+	                    return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _ReduxAction.MutateMethod)(dispatch, key, composite), function () {
 	                        return getState()[key];
 	                    }, function (listeners) {
 	                        return subscribe(_defineProperty({}, key, listeners));
@@ -1377,9 +1428,10 @@ module.exports =
 	        },
 	        mutationMethod: function mutationMethod(key) {
 	            return function (memoize, memoizeStructure, dispatch, getState, subscribe) {
-	                return [(useStructure(memoize) ? memoize.structure : memoize)[key], function (structure) {
+	                var structure = useStructure(memoize) ? memoize.structure : memoize;
+	                return [structure[key], function (structure) {
 	                    return structure !== undefined && structure[key] !== undefined ? structure[key] : undefined;
-	                }(useStructure(memoize) ? memoizeStructure.structure : memoizeStructure), (0, _ReduxAction.MutateMethod)(dispatch, key), function () {
+	                }(useStructure(memoize) ? memoizeStructure.structure : memoizeStructure), (0, _ReduxAction.MutateMethod)(dispatch, key, structure), function () {
 	                    return getState()[key];
 	                }, function (listeners) {
 	                    return subscribe(_defineProperty({}, key, listeners));
@@ -1438,6 +1490,146 @@ module.exports =
 
 /***/ }),
 /* 17 */
+/*!********************************!*\
+  !*** ./src/Prettify/Reduce.js ***!
+  \********************************/
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.Reduce = undefined;
+	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
+	var _walkComposite = __webpack_require__(/*! walk-composite */ 5);
+	
+	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+	
+	var Reduce = function Reduce(action) {
+	    var actions = [];
+	    var payload = undefined;
+	    if ((typeof action === 'undefined' ? 'undefined' : _typeof(action)) !== 'object' || action === null || action.type !== 'COMPOSITE' || _typeof(action.composite) !== 'object') {
+	        return action;
+	    }
+	    (0, _walkComposite.Walk)({
+	        keysMethod: function keysMethod(action, path) {
+	            var type = action.type,
+	                rest = _objectWithoutProperties(action, ['type']);
+	
+	            if (type !== undefined && (type !== 'COMPOSITE' || _typeof(rest.composite) !== 'object')) {
+	                actions.push(type + '\\' + path);
+	                if (Object.keys(rest).length !== 0) {
+	                    if (payload === undefined) {
+	                        payload = {};
+	                    }
+	                    payload[path] = rest;
+	                }
+	            }
+	            return _walkComposite.Defaults.KeysMethod(rest);
+	        },
+	        mutationMethod: function mutationMethod(key) {
+	            return function (action, path) {
+	                return [_walkComposite.Defaults.MutationMethod(key)(action)[0], action.type === 'COMPOSITE' && _typeof(action.composite) === 'object' && key === 'composite' ? path : function (key) {
+	                    return path === '' ? key : path + '\\' + key;
+	                }(Array.isArray(action) ? '[' + key + ']' : '{' + key + '}')];
+	            };
+	        }
+	    })(function () {})(action.composite, '');
+	    return { type: actions.join('\n'), payload: payload };
+	};
+	
+	exports.Reduce = Reduce;
+	exports.default = Reduce;
+
+/***/ }),
+/* 18 */
+/*!********************************!*\
+  !*** ./src/Prettify/Expand.js ***!
+  \********************************/
+/***/ (function(module, exports) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+	
+	function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
+	
+	var Expand = exports.Expand = function Expand(action) {
+	    if ((typeof action === 'undefined' ? 'undefined' : _typeof(action)) !== 'object' || action === null || typeof action.type !== 'string') {
+	        return action;
+	    }
+	    try {
+	        var compositeChecked = undefined,
+	            composite = undefined;
+	        var actions = action.type.split('\n').map(function (a) {
+	            var _a$split = a.split('\\'),
+	                _a$split2 = _toArray(_a$split),
+	                type = _a$split2[0],
+	                path = _a$split2.slice(1);
+	
+	            if (type === undefined) {
+	                throw {
+	                    message: 'action.type is undefined - use format "ACTION_TYPE\\{key1}\\[key2]\\{key3}"',
+	                    type: type
+	                };
+	            }
+	            if (path.length === 0) {
+	                throw {
+	                    message: 'path for composite is not defined - use format "ACTION_TYPE\\{key1}\\[key2]\\{key3}"',
+	                    type: a
+	                };
+	            }
+	            var result = _extends({
+	                type: type
+	            }, function (p) {
+	                return _typeof(action.payload) === 'object' && action.payload !== null && _typeof(action.payload[p]) === 'object' && action.payload[p] !== null ? action.payload[p] : {};
+	            }(path.join('\\')));
+	            var lastChecked = true;
+	            path.reverse().map(function (item) {
+	                var checked = /^\{.*\}$/.test(item) ? true : /^\[.*\]$/.test(item) ? false : undefined;
+	                if (checked === undefined) {
+	                    throw {
+	                        message: 'path item is not in the right format: should be either {key} or [key]',
+	                        item: item
+	                    };
+	                }
+	                lastChecked = checked;
+	                checked = checked ? {} : [];
+	                checked[item.substr(1, item.length - 2)] = result;
+	                result = checked;
+	            });
+	            if (compositeChecked === undefined) {
+	                compositeChecked = lastChecked;
+	                composite = compositeChecked ? {} : [];
+	            } else if (compositeChecked !== lastChecked) {
+	                throw {
+	                    message: 'inconsistency in action paths: [] !== {}'
+	                };
+	            }
+	            composite = compositeChecked ? _extends({}, composite, result) : [].concat(_toConsumableArray(composite), _toConsumableArray(result));
+	        });
+	        return { type: 'COMPOSITE', composite: composite };
+	    } catch (e) {
+	        // console.warn('Action could not be expanded', e, action);
+	        return action;
+	    }
+	};
+	
+	exports.default = Expand;
+
+/***/ }),
+/* 19 */
 /*!*****************************!*\
   !*** ./src/Test/Reducer.js ***!
   \*****************************/
@@ -1454,11 +1646,11 @@ module.exports =
 	
 	var _index = __webpack_require__(/*! ../index */ 1);
 	
-	var _expect = __webpack_require__(/*! expect */ 18);
+	var _expect = __webpack_require__(/*! expect */ 20);
 	
 	var _expect2 = _interopRequireDefault(_expect);
 	
-	var _deepFreeze = __webpack_require__(/*! deep-freeze */ 50);
+	var _deepFreeze = __webpack_require__(/*! deep-freeze */ 52);
 	
 	var _deepFreeze2 = _interopRequireDefault(_deepFreeze);
 	
@@ -1538,7 +1730,7 @@ module.exports =
 	exports.default = test;
 
 /***/ }),
-/* 18 */
+/* 20 */
 /*!*******************************!*\
   !*** ./~/expect/lib/index.js ***!
   \*******************************/
@@ -1546,17 +1738,17 @@ module.exports =
 
 	'use strict';
 	
-	var _Expectation = __webpack_require__(/*! ./Expectation */ 19);
+	var _Expectation = __webpack_require__(/*! ./Expectation */ 21);
 	
 	var _Expectation2 = _interopRequireDefault(_Expectation);
 	
-	var _SpyUtils = __webpack_require__(/*! ./SpyUtils */ 31);
+	var _SpyUtils = __webpack_require__(/*! ./SpyUtils */ 33);
 	
-	var _assert = __webpack_require__(/*! ./assert */ 29);
+	var _assert = __webpack_require__(/*! ./assert */ 31);
 	
 	var _assert2 = _interopRequireDefault(_assert);
 	
-	var _extend = __webpack_require__(/*! ./extend */ 49);
+	var _extend = __webpack_require__(/*! ./extend */ 51);
 	
 	var _extend2 = _interopRequireDefault(_extend);
 	
@@ -1576,7 +1768,7 @@ module.exports =
 	module.exports = expect;
 
 /***/ }),
-/* 19 */
+/* 21 */
 /*!*************************************!*\
   !*** ./~/expect/lib/Expectation.js ***!
   \*************************************/
@@ -1592,21 +1784,21 @@ module.exports =
 	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 	
-	var _has = __webpack_require__(/*! has */ 20);
+	var _has = __webpack_require__(/*! has */ 22);
 	
 	var _has2 = _interopRequireDefault(_has);
 	
-	var _tmatch = __webpack_require__(/*! tmatch */ 23);
+	var _tmatch = __webpack_require__(/*! tmatch */ 25);
 	
 	var _tmatch2 = _interopRequireDefault(_tmatch);
 	
-	var _assert = __webpack_require__(/*! ./assert */ 29);
+	var _assert = __webpack_require__(/*! ./assert */ 31);
 	
 	var _assert2 = _interopRequireDefault(_assert);
 	
-	var _SpyUtils = __webpack_require__(/*! ./SpyUtils */ 31);
+	var _SpyUtils = __webpack_require__(/*! ./SpyUtils */ 33);
 	
-	var _TestUtils = __webpack_require__(/*! ./TestUtils */ 36);
+	var _TestUtils = __webpack_require__(/*! ./TestUtils */ 38);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -1994,19 +2186,19 @@ module.exports =
 	}exports.default = Expectation;
 
 /***/ }),
-/* 20 */
+/* 22 */
 /*!****************************!*\
   !*** ./~/has/src/index.js ***!
   \****************************/
 /***/ (function(module, exports, __webpack_require__) {
 
-	var bind = __webpack_require__(/*! function-bind */ 21);
+	var bind = __webpack_require__(/*! function-bind */ 23);
 	
 	module.exports = bind.call(Function.call, Object.prototype.hasOwnProperty);
 
 
 /***/ }),
-/* 21 */
+/* 23 */
 /*!**********************************!*\
   !*** ./~/function-bind/index.js ***!
   \**********************************/
@@ -2014,13 +2206,13 @@ module.exports =
 
 	'use strict';
 	
-	var implementation = __webpack_require__(/*! ./implementation */ 22);
+	var implementation = __webpack_require__(/*! ./implementation */ 24);
 	
 	module.exports = Function.prototype.bind || implementation;
 
 
 /***/ }),
-/* 22 */
+/* 24 */
 /*!*******************************************!*\
   !*** ./~/function-bind/implementation.js ***!
   \*******************************************/
@@ -2081,7 +2273,7 @@ module.exports =
 
 
 /***/ }),
-/* 23 */
+/* 25 */
 /*!***************************!*\
   !*** ./~/tmatch/index.js ***!
   \***************************/
@@ -2242,10 +2434,10 @@ module.exports =
 	  throw new Error('impossible to reach this point')
 	}
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! ./../process/browser.js */ 24), __webpack_require__(/*! ./../buffer/index.js */ 25).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! ./../process/browser.js */ 26), __webpack_require__(/*! ./../buffer/index.js */ 27).Buffer))
 
 /***/ }),
-/* 24 */
+/* 26 */
 /*!******************************!*\
   !*** ./~/process/browser.js ***!
   \******************************/
@@ -2438,7 +2630,7 @@ module.exports =
 
 
 /***/ }),
-/* 25 */
+/* 27 */
 /*!***************************!*\
   !*** ./~/buffer/index.js ***!
   \***************************/
@@ -2454,9 +2646,9 @@ module.exports =
 	
 	'use strict'
 	
-	var base64 = __webpack_require__(/*! base64-js */ 26)
-	var ieee754 = __webpack_require__(/*! ieee754 */ 27)
-	var isArray = __webpack_require__(/*! isarray */ 28)
+	var base64 = __webpack_require__(/*! base64-js */ 28)
+	var ieee754 = __webpack_require__(/*! ieee754 */ 29)
+	var isArray = __webpack_require__(/*! isarray */ 30)
 	
 	exports.Buffer = Buffer
 	exports.SlowBuffer = SlowBuffer
@@ -4237,7 +4429,7 @@ module.exports =
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ }),
-/* 26 */
+/* 28 */
 /*!******************************!*\
   !*** ./~/base64-js/index.js ***!
   \******************************/
@@ -4360,7 +4552,7 @@ module.exports =
 
 
 /***/ }),
-/* 27 */
+/* 29 */
 /*!****************************!*\
   !*** ./~/ieee754/index.js ***!
   \****************************/
@@ -4453,7 +4645,7 @@ module.exports =
 
 
 /***/ }),
-/* 28 */
+/* 30 */
 /*!****************************!*\
   !*** ./~/isarray/index.js ***!
   \****************************/
@@ -4467,7 +4659,7 @@ module.exports =
 
 
 /***/ }),
-/* 29 */
+/* 31 */
 /*!********************************!*\
   !*** ./~/expect/lib/assert.js ***!
   \********************************/
@@ -4479,7 +4671,7 @@ module.exports =
 	  value: true
 	});
 	
-	var _objectInspect = __webpack_require__(/*! object-inspect */ 30);
+	var _objectInspect = __webpack_require__(/*! object-inspect */ 32);
 	
 	var _objectInspect2 = _interopRequireDefault(_objectInspect);
 	
@@ -4507,7 +4699,7 @@ module.exports =
 	exports.default = assert;
 
 /***/ }),
-/* 30 */
+/* 32 */
 /*!***********************************!*\
   !*** ./~/object-inspect/index.js ***!
   \***********************************/
@@ -4748,7 +4940,7 @@ module.exports =
 
 
 /***/ }),
-/* 31 */
+/* 33 */
 /*!**********************************!*\
   !*** ./~/expect/lib/SpyUtils.js ***!
   \**********************************/
@@ -4761,13 +4953,13 @@ module.exports =
 	});
 	exports.spyOn = exports.createSpy = exports.restoreSpies = exports.isSpy = undefined;
 	
-	var _defineProperties = __webpack_require__(/*! define-properties */ 32);
+	var _defineProperties = __webpack_require__(/*! define-properties */ 34);
 	
-	var _assert = __webpack_require__(/*! ./assert */ 29);
+	var _assert = __webpack_require__(/*! ./assert */ 31);
 	
 	var _assert2 = _interopRequireDefault(_assert);
 	
-	var _TestUtils = __webpack_require__(/*! ./TestUtils */ 36);
+	var _TestUtils = __webpack_require__(/*! ./TestUtils */ 38);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -4877,7 +5069,7 @@ module.exports =
 	};
 
 /***/ }),
-/* 32 */
+/* 34 */
 /*!**************************************!*\
   !*** ./~/define-properties/index.js ***!
   \**************************************/
@@ -4885,8 +5077,8 @@ module.exports =
 
 	'use strict';
 	
-	var keys = __webpack_require__(/*! object-keys */ 33);
-	var foreach = __webpack_require__(/*! foreach */ 35);
+	var keys = __webpack_require__(/*! object-keys */ 35);
+	var foreach = __webpack_require__(/*! foreach */ 37);
 	var hasSymbols = typeof Symbol === 'function' && typeof Symbol() === 'symbol';
 	
 	var toStr = Object.prototype.toString;
@@ -4942,7 +5134,7 @@ module.exports =
 
 
 /***/ }),
-/* 33 */
+/* 35 */
 /*!********************************!*\
   !*** ./~/object-keys/index.js ***!
   \********************************/
@@ -4954,7 +5146,7 @@ module.exports =
 	var has = Object.prototype.hasOwnProperty;
 	var toStr = Object.prototype.toString;
 	var slice = Array.prototype.slice;
-	var isArgs = __webpack_require__(/*! ./isArguments */ 34);
+	var isArgs = __webpack_require__(/*! ./isArguments */ 36);
 	var isEnumerable = Object.prototype.propertyIsEnumerable;
 	var hasDontEnumBug = !isEnumerable.call({ toString: null }, 'toString');
 	var hasProtoEnumBug = isEnumerable.call(function () {}, 'prototype');
@@ -5091,7 +5283,7 @@ module.exports =
 
 
 /***/ }),
-/* 34 */
+/* 36 */
 /*!**************************************!*\
   !*** ./~/object-keys/isArguments.js ***!
   \**************************************/
@@ -5117,7 +5309,7 @@ module.exports =
 
 
 /***/ }),
-/* 35 */
+/* 37 */
 /*!****************************!*\
   !*** ./~/foreach/index.js ***!
   \****************************/
@@ -5148,7 +5340,7 @@ module.exports =
 
 
 /***/ }),
-/* 36 */
+/* 38 */
 /*!***********************************!*\
   !*** ./~/expect/lib/TestUtils.js ***!
   \***********************************/
@@ -5163,15 +5355,15 @@ module.exports =
 	
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 	
-	var _isRegex = __webpack_require__(/*! is-regex */ 37);
+	var _isRegex = __webpack_require__(/*! is-regex */ 39);
 	
 	var _isRegex2 = _interopRequireDefault(_isRegex);
 	
-	var _why = __webpack_require__(/*! is-equal/why */ 38);
+	var _why = __webpack_require__(/*! is-equal/why */ 40);
 	
 	var _why2 = _interopRequireDefault(_why);
 	
-	var _objectKeys = __webpack_require__(/*! object-keys */ 33);
+	var _objectKeys = __webpack_require__(/*! object-keys */ 35);
 	
 	var _objectKeys2 = _interopRequireDefault(_objectKeys);
 	
@@ -5302,7 +5494,7 @@ module.exports =
 	};
 
 /***/ }),
-/* 37 */
+/* 39 */
 /*!*****************************!*\
   !*** ./~/is-regex/index.js ***!
   \*****************************/
@@ -5310,7 +5502,7 @@ module.exports =
 
 	'use strict';
 	
-	var has = __webpack_require__(/*! has */ 20);
+	var has = __webpack_require__(/*! has */ 22);
 	var regexExec = RegExp.prototype.exec;
 	var gOPD = Object.getOwnPropertyDescriptor;
 	
@@ -5350,7 +5542,7 @@ module.exports =
 
 
 /***/ }),
-/* 38 */
+/* 40 */
 /*!***************************!*\
   !*** ./~/is-equal/why.js ***!
   \***************************/
@@ -5361,16 +5553,16 @@ module.exports =
 	var ObjectPrototype = Object.prototype;
 	var toStr = ObjectPrototype.toString;
 	var booleanValue = Boolean.prototype.valueOf;
-	var has = __webpack_require__(/*! has */ 20);
-	var isArrowFunction = __webpack_require__(/*! is-arrow-function */ 39);
-	var isBoolean = __webpack_require__(/*! is-boolean-object */ 41);
-	var isDate = __webpack_require__(/*! is-date-object */ 42);
-	var isGenerator = __webpack_require__(/*! is-generator-function */ 43);
-	var isNumber = __webpack_require__(/*! is-number-object */ 44);
-	var isRegex = __webpack_require__(/*! is-regex */ 37);
-	var isString = __webpack_require__(/*! is-string */ 45);
-	var isSymbol = __webpack_require__(/*! is-symbol */ 46);
-	var isCallable = __webpack_require__(/*! is-callable */ 40);
+	var has = __webpack_require__(/*! has */ 22);
+	var isArrowFunction = __webpack_require__(/*! is-arrow-function */ 41);
+	var isBoolean = __webpack_require__(/*! is-boolean-object */ 43);
+	var isDate = __webpack_require__(/*! is-date-object */ 44);
+	var isGenerator = __webpack_require__(/*! is-generator-function */ 45);
+	var isNumber = __webpack_require__(/*! is-number-object */ 46);
+	var isRegex = __webpack_require__(/*! is-regex */ 39);
+	var isString = __webpack_require__(/*! is-string */ 47);
+	var isSymbol = __webpack_require__(/*! is-symbol */ 48);
+	var isCallable = __webpack_require__(/*! is-callable */ 42);
 	
 	var isProto = Object.prototype.isPrototypeOf;
 	
@@ -5378,9 +5570,9 @@ module.exports =
 	var functionsHaveNames = namedFoo.name === 'foo';
 	
 	var symbolValue = typeof Symbol === 'function' ? Symbol.prototype.valueOf : null;
-	var symbolIterator = __webpack_require__(/*! ./getSymbolIterator */ 47)();
+	var symbolIterator = __webpack_require__(/*! ./getSymbolIterator */ 49)();
 	
-	var collectionsForEach = __webpack_require__(/*! ./getCollectionsForEach */ 48)();
+	var collectionsForEach = __webpack_require__(/*! ./getCollectionsForEach */ 50)();
 	
 	var getPrototypeOf = Object.getPrototypeOf;
 	if (!getPrototypeOf) {
@@ -5652,7 +5844,7 @@ module.exports =
 
 
 /***/ }),
-/* 39 */
+/* 41 */
 /*!**************************************!*\
   !*** ./~/is-arrow-function/index.js ***!
   \**************************************/
@@ -5660,7 +5852,7 @@ module.exports =
 
 	'use strict';
 	
-	var isCallable = __webpack_require__(/*! is-callable */ 40);
+	var isCallable = __webpack_require__(/*! is-callable */ 42);
 	var fnToStr = Function.prototype.toString;
 	var isNonArrowFnRegex = /^\s*function/;
 	var isArrowFnWithParensRegex = /^\([^\)]*\) *=>/;
@@ -5676,7 +5868,7 @@ module.exports =
 
 
 /***/ }),
-/* 40 */
+/* 42 */
 /*!********************************!*\
   !*** ./~/is-callable/index.js ***!
   \********************************/
@@ -5724,7 +5916,7 @@ module.exports =
 
 
 /***/ }),
-/* 41 */
+/* 43 */
 /*!**************************************!*\
   !*** ./~/is-boolean-object/index.js ***!
   \**************************************/
@@ -5754,7 +5946,7 @@ module.exports =
 
 
 /***/ }),
-/* 42 */
+/* 44 */
 /*!***********************************!*\
   !*** ./~/is-date-object/index.js ***!
   \***********************************/
@@ -5783,7 +5975,7 @@ module.exports =
 
 
 /***/ }),
-/* 43 */
+/* 45 */
 /*!******************************************!*\
   !*** ./~/is-generator-function/index.js ***!
   \******************************************/
@@ -5824,7 +6016,7 @@ module.exports =
 
 
 /***/ }),
-/* 44 */
+/* 46 */
 /*!*************************************!*\
   !*** ./~/is-number-object/index.js ***!
   \*************************************/
@@ -5853,7 +6045,7 @@ module.exports =
 
 
 /***/ }),
-/* 45 */
+/* 47 */
 /*!******************************!*\
   !*** ./~/is-string/index.js ***!
   \******************************/
@@ -5882,7 +6074,7 @@ module.exports =
 
 
 /***/ }),
-/* 46 */
+/* 48 */
 /*!******************************!*\
   !*** ./~/is-symbol/index.js ***!
   \******************************/
@@ -5918,7 +6110,7 @@ module.exports =
 
 
 /***/ }),
-/* 47 */
+/* 49 */
 /*!*****************************************!*\
   !*** ./~/is-equal/getSymbolIterator.js ***!
   \*****************************************/
@@ -5926,7 +6118,7 @@ module.exports =
 
 	'use strict';
 	
-	var isSymbol = __webpack_require__(/*! is-symbol */ 46);
+	var isSymbol = __webpack_require__(/*! is-symbol */ 48);
 	
 	module.exports = function getSymbolIterator() {
 		var symbolIterator = typeof Symbol === 'function' && isSymbol(Symbol.iterator) ? Symbol.iterator : null;
@@ -5944,7 +6136,7 @@ module.exports =
 
 
 /***/ }),
-/* 48 */
+/* 50 */
 /*!*********************************************!*\
   !*** ./~/is-equal/getCollectionsForEach.js ***!
   \*********************************************/
@@ -5978,7 +6170,7 @@ module.exports =
 
 
 /***/ }),
-/* 49 */
+/* 51 */
 /*!********************************!*\
   !*** ./~/expect/lib/extend.js ***!
   \********************************/
@@ -5990,7 +6182,7 @@ module.exports =
 	  value: true
 	});
 	
-	var _Expectation = __webpack_require__(/*! ./Expectation */ 19);
+	var _Expectation = __webpack_require__(/*! ./Expectation */ 21);
 	
 	var _Expectation2 = _interopRequireDefault(_Expectation);
 	
@@ -6011,7 +6203,7 @@ module.exports =
 	exports.default = extend;
 
 /***/ }),
-/* 50 */
+/* 52 */
 /*!********************************!*\
   !*** ./~/deep-freeze/index.js ***!
   \********************************/
@@ -6034,7 +6226,7 @@ module.exports =
 
 
 /***/ }),
-/* 51 */
+/* 53 */
 /*!********************************!*\
   !*** ./src/Test/Middleware.js ***!
   \********************************/
@@ -6048,13 +6240,13 @@ module.exports =
 	
 	var _index = __webpack_require__(/*! ../index */ 1);
 	
-	var _expect = __webpack_require__(/*! expect */ 18);
+	var _expect = __webpack_require__(/*! expect */ 20);
 	
 	var _expect2 = _interopRequireDefault(_expect);
 	
-	var _redux = __webpack_require__(/*! redux */ 52);
+	var _redux = __webpack_require__(/*! redux */ 54);
 	
-	var _Reducer = __webpack_require__(/*! ./Reducer */ 17);
+	var _Reducer = __webpack_require__(/*! ./Reducer */ 19);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -6216,7 +6408,7 @@ module.exports =
 	exports.default = test;
 
 /***/ }),
-/* 52 */
+/* 54 */
 /*!******************************!*\
   !*** ./~/redux/lib/index.js ***!
   \******************************/
@@ -6227,27 +6419,27 @@ module.exports =
 	exports.__esModule = true;
 	exports.compose = exports.applyMiddleware = exports.bindActionCreators = exports.combineReducers = exports.createStore = undefined;
 	
-	var _createStore = __webpack_require__(/*! ./createStore */ 53);
+	var _createStore = __webpack_require__(/*! ./createStore */ 55);
 	
 	var _createStore2 = _interopRequireDefault(_createStore);
 	
-	var _combineReducers = __webpack_require__(/*! ./combineReducers */ 68);
+	var _combineReducers = __webpack_require__(/*! ./combineReducers */ 70);
 	
 	var _combineReducers2 = _interopRequireDefault(_combineReducers);
 	
-	var _bindActionCreators = __webpack_require__(/*! ./bindActionCreators */ 70);
+	var _bindActionCreators = __webpack_require__(/*! ./bindActionCreators */ 72);
 	
 	var _bindActionCreators2 = _interopRequireDefault(_bindActionCreators);
 	
-	var _applyMiddleware = __webpack_require__(/*! ./applyMiddleware */ 71);
+	var _applyMiddleware = __webpack_require__(/*! ./applyMiddleware */ 73);
 	
 	var _applyMiddleware2 = _interopRequireDefault(_applyMiddleware);
 	
-	var _compose = __webpack_require__(/*! ./compose */ 72);
+	var _compose = __webpack_require__(/*! ./compose */ 74);
 	
 	var _compose2 = _interopRequireDefault(_compose);
 	
-	var _warning = __webpack_require__(/*! ./utils/warning */ 69);
+	var _warning = __webpack_require__(/*! ./utils/warning */ 71);
 	
 	var _warning2 = _interopRequireDefault(_warning);
 	
@@ -6268,10 +6460,10 @@ module.exports =
 	exports.bindActionCreators = _bindActionCreators2['default'];
 	exports.applyMiddleware = _applyMiddleware2['default'];
 	exports.compose = _compose2['default'];
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! ./../../process/browser.js */ 24)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! ./../../process/browser.js */ 26)))
 
 /***/ }),
-/* 53 */
+/* 55 */
 /*!************************************!*\
   !*** ./~/redux/lib/createStore.js ***!
   \************************************/
@@ -6283,11 +6475,11 @@ module.exports =
 	exports.ActionTypes = undefined;
 	exports['default'] = createStore;
 	
-	var _isPlainObject = __webpack_require__(/*! lodash/isPlainObject */ 54);
+	var _isPlainObject = __webpack_require__(/*! lodash/isPlainObject */ 56);
 	
 	var _isPlainObject2 = _interopRequireDefault(_isPlainObject);
 	
-	var _symbolObservable = __webpack_require__(/*! symbol-observable */ 64);
+	var _symbolObservable = __webpack_require__(/*! symbol-observable */ 66);
 	
 	var _symbolObservable2 = _interopRequireDefault(_symbolObservable);
 	
@@ -6540,15 +6732,15 @@ module.exports =
 	}
 
 /***/ }),
-/* 54 */
+/* 56 */
 /*!***********************************!*\
   !*** ./~/lodash/isPlainObject.js ***!
   \***********************************/
 /***/ (function(module, exports, __webpack_require__) {
 
-	var baseGetTag = __webpack_require__(/*! ./_baseGetTag */ 55),
-	    getPrototype = __webpack_require__(/*! ./_getPrototype */ 61),
-	    isObjectLike = __webpack_require__(/*! ./isObjectLike */ 63);
+	var baseGetTag = __webpack_require__(/*! ./_baseGetTag */ 57),
+	    getPrototype = __webpack_require__(/*! ./_getPrototype */ 63),
+	    isObjectLike = __webpack_require__(/*! ./isObjectLike */ 65);
 	
 	/** `Object#toString` result references. */
 	var objectTag = '[object Object]';
@@ -6611,15 +6803,15 @@ module.exports =
 
 
 /***/ }),
-/* 55 */
+/* 57 */
 /*!*********************************!*\
   !*** ./~/lodash/_baseGetTag.js ***!
   \*********************************/
 /***/ (function(module, exports, __webpack_require__) {
 
-	var Symbol = __webpack_require__(/*! ./_Symbol */ 56),
-	    getRawTag = __webpack_require__(/*! ./_getRawTag */ 59),
-	    objectToString = __webpack_require__(/*! ./_objectToString */ 60);
+	var Symbol = __webpack_require__(/*! ./_Symbol */ 58),
+	    getRawTag = __webpack_require__(/*! ./_getRawTag */ 61),
+	    objectToString = __webpack_require__(/*! ./_objectToString */ 62);
 	
 	/** `Object#toString` result references. */
 	var nullTag = '[object Null]',
@@ -6648,13 +6840,13 @@ module.exports =
 
 
 /***/ }),
-/* 56 */
+/* 58 */
 /*!*****************************!*\
   !*** ./~/lodash/_Symbol.js ***!
   \*****************************/
 /***/ (function(module, exports, __webpack_require__) {
 
-	var root = __webpack_require__(/*! ./_root */ 57);
+	var root = __webpack_require__(/*! ./_root */ 59);
 	
 	/** Built-in value references. */
 	var Symbol = root.Symbol;
@@ -6663,13 +6855,13 @@ module.exports =
 
 
 /***/ }),
-/* 57 */
+/* 59 */
 /*!***************************!*\
   !*** ./~/lodash/_root.js ***!
   \***************************/
 /***/ (function(module, exports, __webpack_require__) {
 
-	var freeGlobal = __webpack_require__(/*! ./_freeGlobal */ 58);
+	var freeGlobal = __webpack_require__(/*! ./_freeGlobal */ 60);
 	
 	/** Detect free variable `self`. */
 	var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
@@ -6681,7 +6873,7 @@ module.exports =
 
 
 /***/ }),
-/* 58 */
+/* 60 */
 /*!*********************************!*\
   !*** ./~/lodash/_freeGlobal.js ***!
   \*********************************/
@@ -6695,13 +6887,13 @@ module.exports =
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ }),
-/* 59 */
+/* 61 */
 /*!********************************!*\
   !*** ./~/lodash/_getRawTag.js ***!
   \********************************/
 /***/ (function(module, exports, __webpack_require__) {
 
-	var Symbol = __webpack_require__(/*! ./_Symbol */ 56);
+	var Symbol = __webpack_require__(/*! ./_Symbol */ 58);
 	
 	/** Used for built-in method references. */
 	var objectProto = Object.prototype;
@@ -6750,7 +6942,7 @@ module.exports =
 
 
 /***/ }),
-/* 60 */
+/* 62 */
 /*!*************************************!*\
   !*** ./~/lodash/_objectToString.js ***!
   \*************************************/
@@ -6781,13 +6973,13 @@ module.exports =
 
 
 /***/ }),
-/* 61 */
+/* 63 */
 /*!***********************************!*\
   !*** ./~/lodash/_getPrototype.js ***!
   \***********************************/
 /***/ (function(module, exports, __webpack_require__) {
 
-	var overArg = __webpack_require__(/*! ./_overArg */ 62);
+	var overArg = __webpack_require__(/*! ./_overArg */ 64);
 	
 	/** Built-in value references. */
 	var getPrototype = overArg(Object.getPrototypeOf, Object);
@@ -6796,7 +6988,7 @@ module.exports =
 
 
 /***/ }),
-/* 62 */
+/* 64 */
 /*!******************************!*\
   !*** ./~/lodash/_overArg.js ***!
   \******************************/
@@ -6820,7 +7012,7 @@ module.exports =
 
 
 /***/ }),
-/* 63 */
+/* 65 */
 /*!**********************************!*\
   !*** ./~/lodash/isObjectLike.js ***!
   \**********************************/
@@ -6858,17 +7050,17 @@ module.exports =
 
 
 /***/ }),
-/* 64 */
+/* 66 */
 /*!**************************************!*\
   !*** ./~/symbol-observable/index.js ***!
   \**************************************/
 /***/ (function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(/*! ./lib/index */ 65);
+	module.exports = __webpack_require__(/*! ./lib/index */ 67);
 
 
 /***/ }),
-/* 65 */
+/* 67 */
 /*!******************************************!*\
   !*** ./~/symbol-observable/lib/index.js ***!
   \******************************************/
@@ -6880,7 +7072,7 @@ module.exports =
 	  value: true
 	});
 	
-	var _ponyfill = __webpack_require__(/*! ./ponyfill */ 67);
+	var _ponyfill = __webpack_require__(/*! ./ponyfill */ 69);
 	
 	var _ponyfill2 = _interopRequireDefault(_ponyfill);
 	
@@ -6903,10 +7095,10 @@ module.exports =
 	
 	var result = (0, _ponyfill2['default'])(root);
 	exports['default'] = result;
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(/*! ./../../webpack/buildin/module.js */ 66)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(/*! ./../../webpack/buildin/module.js */ 68)(module)))
 
 /***/ }),
-/* 66 */
+/* 68 */
 /*!***********************************!*\
   !*** (webpack)/buildin/module.js ***!
   \***********************************/
@@ -6925,7 +7117,7 @@ module.exports =
 
 
 /***/ }),
-/* 67 */
+/* 69 */
 /*!*********************************************!*\
   !*** ./~/symbol-observable/lib/ponyfill.js ***!
   \*********************************************/
@@ -6956,7 +7148,7 @@ module.exports =
 	};
 
 /***/ }),
-/* 68 */
+/* 70 */
 /*!****************************************!*\
   !*** ./~/redux/lib/combineReducers.js ***!
   \****************************************/
@@ -6967,13 +7159,13 @@ module.exports =
 	exports.__esModule = true;
 	exports['default'] = combineReducers;
 	
-	var _createStore = __webpack_require__(/*! ./createStore */ 53);
+	var _createStore = __webpack_require__(/*! ./createStore */ 55);
 	
-	var _isPlainObject = __webpack_require__(/*! lodash/isPlainObject */ 54);
+	var _isPlainObject = __webpack_require__(/*! lodash/isPlainObject */ 56);
 	
 	var _isPlainObject2 = _interopRequireDefault(_isPlainObject);
 	
-	var _warning = __webpack_require__(/*! ./utils/warning */ 69);
+	var _warning = __webpack_require__(/*! ./utils/warning */ 71);
 	
 	var _warning2 = _interopRequireDefault(_warning);
 	
@@ -7105,10 +7297,10 @@ module.exports =
 	    return hasChanged ? nextState : state;
 	  };
 	}
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! ./../../process/browser.js */ 24)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(/*! ./../../process/browser.js */ 26)))
 
 /***/ }),
-/* 69 */
+/* 71 */
 /*!**************************************!*\
   !*** ./~/redux/lib/utils/warning.js ***!
   \**************************************/
@@ -7141,7 +7333,7 @@ module.exports =
 	}
 
 /***/ }),
-/* 70 */
+/* 72 */
 /*!*******************************************!*\
   !*** ./~/redux/lib/bindActionCreators.js ***!
   \*******************************************/
@@ -7200,7 +7392,7 @@ module.exports =
 	}
 
 /***/ }),
-/* 71 */
+/* 73 */
 /*!****************************************!*\
   !*** ./~/redux/lib/applyMiddleware.js ***!
   \****************************************/
@@ -7214,7 +7406,7 @@ module.exports =
 	
 	exports['default'] = applyMiddleware;
 	
-	var _compose = __webpack_require__(/*! ./compose */ 72);
+	var _compose = __webpack_require__(/*! ./compose */ 74);
 	
 	var _compose2 = _interopRequireDefault(_compose);
 	
@@ -7266,7 +7458,7 @@ module.exports =
 	}
 
 /***/ }),
-/* 72 */
+/* 74 */
 /*!********************************!*\
   !*** ./~/redux/lib/compose.js ***!
   \********************************/
@@ -7310,7 +7502,7 @@ module.exports =
 	}
 
 /***/ }),
-/* 73 */
+/* 75 */
 /*!******************************!*\
   !*** ./src/Test/Equality.js ***!
   \******************************/
@@ -7324,9 +7516,9 @@ module.exports =
 	
 	var _index = __webpack_require__(/*! ../index */ 1);
 	
-	var _Reducer = __webpack_require__(/*! ./Reducer */ 17);
+	var _Reducer = __webpack_require__(/*! ./Reducer */ 19);
 	
-	var _expect = __webpack_require__(/*! expect */ 18);
+	var _expect = __webpack_require__(/*! expect */ 20);
 	
 	var _expect2 = _interopRequireDefault(_expect);
 	
@@ -7377,7 +7569,7 @@ module.exports =
 	exports.default = test;
 
 /***/ }),
-/* 74 */
+/* 76 */
 /*!*******************************!*\
   !*** ./src/Test/Subscribe.js ***!
   \*******************************/
@@ -7391,11 +7583,11 @@ module.exports =
 	
 	var _index = __webpack_require__(/*! ../index */ 1);
 	
-	var _Reducer = __webpack_require__(/*! ./Reducer */ 17);
+	var _Reducer = __webpack_require__(/*! ./Reducer */ 19);
 	
-	var _redux = __webpack_require__(/*! redux */ 52);
+	var _redux = __webpack_require__(/*! redux */ 54);
 	
-	var _expect = __webpack_require__(/*! expect */ 18);
+	var _expect = __webpack_require__(/*! expect */ 20);
 	
 	var _expect2 = _interopRequireDefault(_expect);
 	
@@ -7476,7 +7668,7 @@ module.exports =
 	exports.default = test;
 
 /***/ }),
-/* 75 */
+/* 77 */
 /*!***************************!*\
   !*** ./src/Test/Redux.js ***!
   \***************************/
@@ -7490,13 +7682,13 @@ module.exports =
 	
 	var _index = __webpack_require__(/*! ../index */ 1);
 	
-	var _expect = __webpack_require__(/*! expect */ 18);
+	var _expect = __webpack_require__(/*! expect */ 20);
 	
 	var _expect2 = _interopRequireDefault(_expect);
 	
-	var _redux = __webpack_require__(/*! redux */ 52);
+	var _redux = __webpack_require__(/*! redux */ 54);
 	
-	var _Reducer = __webpack_require__(/*! ./Reducer */ 17);
+	var _Reducer = __webpack_require__(/*! ./Reducer */ 19);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -7624,7 +7816,7 @@ module.exports =
 	exports.default = test;
 
 /***/ }),
-/* 76 */
+/* 78 */
 /*!*****************************!*\
   !*** ./src/Test/Memoize.js ***!
   \*****************************/
@@ -7638,15 +7830,15 @@ module.exports =
 	
 	var _index = __webpack_require__(/*! ../index */ 1);
 	
-	var _expect = __webpack_require__(/*! expect */ 18);
+	var _expect = __webpack_require__(/*! expect */ 20);
 	
 	var _expect2 = _interopRequireDefault(_expect);
 	
-	var _Reducer = __webpack_require__(/*! ./Reducer */ 17);
+	var _Reducer = __webpack_require__(/*! ./Reducer */ 19);
 	
-	var _redux = __webpack_require__(/*! redux */ 52);
+	var _redux = __webpack_require__(/*! redux */ 54);
 	
-	var _MemoizeChain = __webpack_require__(/*! ../MemoizeChain */ 77);
+	var _MemoizeChain = __webpack_require__(/*! ../MemoizeChain */ 79);
 	
 	var _MemoizeChain2 = _interopRequireDefault(_MemoizeChain);
 	
@@ -7855,7 +8047,7 @@ module.exports =
 	exports.default = test;
 
 /***/ }),
-/* 77 */
+/* 79 */
 /*!*****************************!*\
   !*** ./src/MemoizeChain.js ***!
   \*****************************/
@@ -7901,7 +8093,7 @@ module.exports =
 	exports.default = MemoizeChain;
 
 /***/ }),
-/* 78 */
+/* 80 */
 /*!********************************!*\
   !*** ./src/Test/ReduxThunk.js ***!
   \********************************/
@@ -7913,17 +8105,17 @@ module.exports =
 	    value: true
 	});
 	
-	var _redux = __webpack_require__(/*! redux */ 52);
+	var _redux = __webpack_require__(/*! redux */ 54);
 	
-	var _Reducer = __webpack_require__(/*! ./Reducer */ 17);
+	var _Reducer = __webpack_require__(/*! ./Reducer */ 19);
 	
 	var _index = __webpack_require__(/*! ../index */ 1);
 	
-	var _reduxThunk = __webpack_require__(/*! redux-thunk */ 79);
+	var _reduxThunk = __webpack_require__(/*! redux-thunk */ 81);
 	
 	var _reduxThunk2 = _interopRequireDefault(_reduxThunk);
 	
-	var _expect = __webpack_require__(/*! expect */ 18);
+	var _expect = __webpack_require__(/*! expect */ 20);
 	
 	var _expect2 = _interopRequireDefault(_expect);
 	
@@ -7942,6 +8134,7 @@ module.exports =
 	        toggle: _Reducer.toggle,
 	        calc: [_Reducer.increment, (0, _index.Composite)({ reducer: _Reducer.calculator, middleware: _reduxThunk2.default })]
 	    });
+	    composite.prettify();
 	    var store = (0, _redux.createStore)(composite.reducer, { toggle: false, calc: [1, 2] }, (0, _redux.applyMiddleware)(composite.middleware));
 	    store.dispatch({ type: 'COMPOSITE', composite: { calc: [, calculatorThunkActor()] } });
 	    (0, _expect2.default)(store.getState()).toEqual({ toggle: false, calc: [1, 1] });
@@ -7952,6 +8145,7 @@ module.exports =
 	        increment: _Reducer.increment,
 	        reducer: composite
 	    });
+	    complex.prettify();
 	    var complexStore = (0, _redux.createStore)(complex.reducer, { increment: 1, reducer: { toggle: false, calc: [1, 2] } }, (0, _redux.applyMiddleware)(complex.middleware));
 	    complexStore.dispatch({
 	        type: 'COMPOSITE',
@@ -7974,7 +8168,7 @@ module.exports =
 	exports.default = test;
 
 /***/ }),
-/* 79 */
+/* 81 */
 /*!************************************!*\
   !*** ./~/redux-thunk/lib/index.js ***!
   \************************************/
@@ -8005,7 +8199,7 @@ module.exports =
 	exports['default'] = thunk;
 
 /***/ }),
-/* 80 */
+/* 82 */
 /*!******************************!*\
   !*** ./src/Test/Prettify.js ***!
   \******************************/
@@ -8018,182 +8212,32 @@ module.exports =
 	});
 	exports.test = undefined;
 	
-	var _Reduce = __webpack_require__(/*! ../Prettify/Reduce */ 81);
+	var _index = __webpack_require__(/*! ../index */ 1);
 	
-	var _Reduce2 = _interopRequireDefault(_Reduce);
-	
-	var _Expand = __webpack_require__(/*! ../Prettify/Expand */ 82);
-	
-	var _Expand2 = _interopRequireDefault(_Expand);
-	
-	var _expect = __webpack_require__(/*! expect */ 18);
+	var _expect = __webpack_require__(/*! expect */ 20);
 	
 	var _expect2 = _interopRequireDefault(_expect);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
+	var _Defaults$Prettify = _index.Defaults.Prettify,
+	    Reduce = _Defaults$Prettify.Reduce,
+	    Expand = _Defaults$Prettify.Expand;
 	var test = exports.test = function test() {
-	    var reduced1 = { type: 'ACTION1\\{a}\\[1]\nACTION2\\{b}', payload: { '{b}': { data: 'SOMETHING' } } };
+	    var reduced1 = { type: 'ACTION1\\{a}\\[1]\nACTION2\\{b}\\[0]', payload: { '{b}\\[0]': { data: 'SOMETHING' } } };
 	    var expanded1 = { type: 'COMPOSITE', composite: {
 	            a: [, { type: 'ACTION1' }],
-	            b: { type: 'ACTION2', data: 'SOMETHING' }
+	            b: [{ type: 'ACTION2', data: 'SOMETHING' }]
 	        } };
 	    var reduced2 = { type: 'SOME_ACTION', data: 'SOMETHING' };
 	    var expanded2 = reduced2;
-	    (0, _expect2.default)((0, _Reduce2.default)(expanded1)).toEqual(reduced1);
-	    (0, _expect2.default)((0, _Reduce2.default)(expanded2)).toEqual(reduced2);
-	    (0, _expect2.default)((0, _Expand2.default)(reduced1)).toEqual(expanded1);
-	    (0, _expect2.default)((0, _Expand2.default)(reduced2)).toEqual(expanded2);
+	    (0, _expect2.default)(Reduce(expanded1)).toEqual(reduced1);
+	    (0, _expect2.default)(Reduce(expanded2)).toEqual(reduced2);
+	    (0, _expect2.default)(Expand(reduced1)).toEqual(expanded1);
+	    (0, _expect2.default)(Expand(reduced2)).toEqual(expanded2);
 	};
 	
 	exports.default = test;
-
-/***/ }),
-/* 81 */
-/*!********************************!*\
-  !*** ./src/Prettify/Reduce.js ***!
-  \********************************/
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	exports.Reduce = undefined;
-	
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-	
-	var _walkComposite = __webpack_require__(/*! walk-composite */ 5);
-	
-	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
-	
-	var Reduce = function Reduce(action) {
-	    var actions = [];
-	    var payload = undefined;
-	    if ((typeof action === 'undefined' ? 'undefined' : _typeof(action)) !== 'object' || action === null || action.type !== 'COMPOSITE' || _typeof(action.composite) !== 'object') {
-	        return action;
-	    }
-	    (0, _walkComposite.Walk)({
-	        keysMethod: function keysMethod(action, path) {
-	            var type = action.type,
-	                rest = _objectWithoutProperties(action, ['type']);
-	
-	            if (type !== undefined) {
-	                actions.push(type + '\\' + path);
-	                if (Object.keys(rest).length !== 0) {
-	                    if (payload === undefined) {
-	                        payload = {};
-	                    }
-	                    payload[path] = rest;
-	                }
-	            }
-	            return _walkComposite.Defaults.KeysMethod(rest);
-	        },
-	        mutationMethod: function mutationMethod(key) {
-	            return function (action, path) {
-	                return [_walkComposite.Defaults.MutationMethod(key)(action)[0], function (key) {
-	                    return path === '' ? key : path + '\\' + key;
-	                }(Array.isArray(action) ? '[' + key + ']' : '{' + key + '}')];
-	            };
-	        }
-	    })(function () {})(action.composite, '');
-	    return { type: actions.join('\n'), payload: payload };
-	};
-	
-	exports.Reduce = Reduce;
-	exports.default = Reduce;
-
-/***/ }),
-/* 82 */
-/*!********************************!*\
-  !*** ./src/Prettify/Expand.js ***!
-  \********************************/
-/***/ (function(module, exports) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	
-	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-	
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-	
-	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-	
-	function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
-	
-	var check = function check(string) {
-	    if (/^\[.*\]$/.test(string)) {
-	        return false;
-	    }
-	    if (/^\{.*\}$/.test(string)) {
-	        return true;
-	    }
-	
-	    return undefined;
-	};
-	
-	var Expand = exports.Expand = function Expand(action) {
-	    if ((typeof action === 'undefined' ? 'undefined' : _typeof(action)) !== 'object' || action === null || typeof action.type !== 'string') {
-	        return action;
-	    }
-	    try {
-	        var compositeChecked = undefined,
-	            composite = undefined;
-	        var actions = action.type.split('\n').map(function (a) {
-	            var _a$split = a.split('\\'),
-	                _a$split2 = _toArray(_a$split),
-	                type = _a$split2[0],
-	                path = _a$split2.slice(1);
-	
-	            if (type === undefined) {
-	                throw {
-	                    message: 'action.type is undefined - use format "ACTION_TYPE\\{key1}\\[key2]\\{key3}"',
-	                    type: type
-	                };
-	            }
-	            if (path.length === 0) {
-	                throw {
-	                    message: 'path for composite is not defined - use format "ACTION_TYPE\\{key1}\\[key2]\\{key3}"',
-	                    type: a
-	                };
-	            }
-	            var result = _extends({ type: type }, _typeof(action.payload) === 'object' && action.payload !== null && _typeof(action.payload[path.join()]) === 'object' && action.payload[path.join()] !== null ? action.payload[path.join()] : {});
-	            var lastChecked = true;
-	            path.reverse().map(function (item) {
-	                var checked = check(item);
-	                if (checked === undefined) {
-	                    throw {
-	                        message: 'path item is not in the right format: should be either {key} or [key]',
-	                        item: item
-	                    };
-	                }
-	                lastChecked = checked;
-	                checked = checked ? {} : [];
-	                checked[item.substr(1, item.length - 2)] = result;
-	                result = checked;
-	            });
-	            if (compositeChecked === undefined) {
-	                compositeChecked = lastChecked;
-	                composite = compositeChecked ? {} : [];
-	            } else if (compositeChecked !== lastChecked) {
-	                throw {
-	                    message: 'inconsistency in action paths: [] !== {}'
-	                };
-	            }
-	            composite = compositeChecked ? _extends({}, composite, result) : [].concat(_toConsumableArray(composite), _toConsumableArray(result));
-	        });
-	        return { type: 'COMPOSITE', composite: composite };
-	    } catch (e) {
-	        console.warn('Action could not be expanded', e, action);
-	        return action;
-	    }
-	};
-	
-	exports.default = Expand;
 
 /***/ })
 /******/ ]);

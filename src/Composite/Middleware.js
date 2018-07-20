@@ -15,7 +15,7 @@ const Middleware = compositeStructure => ({dispatch, getState}) => {
         const initNextMiddleware = WalkComposite({
             mutationMethod: key => (composite, next, middleware) => [
                 DefaultMutationMethod(key)(composite),
-                MutateMethod(next, key),
+                MutateMethod(next, key, composite),
                 DefaultMutationMethod(key)(middleware)
             ]
         })(

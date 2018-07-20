@@ -18,6 +18,7 @@ const test = () => {
             Composite({reducer: calculator, middleware: thunk})
         ]
     });
+    composite.prettify();
     let store = createStore(
         composite.reducer,
         {toggle: false, calc: [1, 2]},
@@ -32,6 +33,7 @@ const test = () => {
         increment,
         reducer: composite
     });
+    complex.prettify();
     let complexStore = createStore(
         complex.reducer,
         {increment: 1, reducer: {toggle: false, calc: [1, 2]}},

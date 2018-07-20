@@ -7,6 +7,8 @@ import Redux from './Composite/Redux';
 import Memoize from './Composite/Memoize';
 import InitRedux from './Redux';
 import InitMemoize from './Memoize';
+import Reduce from './Prettify/Reduce';
+import Expand from './Prettify/Expand';
 
 const defaultEquality = (prev, next) => prev === next;
 
@@ -75,9 +77,15 @@ class Composite
         const compositeStructure = structure === undefined
             ? undefined
             : WalkComposite({}, true)(
-                leaf => typeof leaf === 'function'
-                    ? new Composite({reducer: leaf})
-                    : leaf
+                leaf => {
+                    if (typeof leaf === 'function') {
+                        return new Composite({reducer: leaf})
+                    }
+                    if (leaf instanceof Composite && typeof leaf.uglify === 'function') {
+                        leaf.uglify();
+                    }
+                    return leaf;
+                }
             )(structure);
 
         const injection = (parameter, withStructure, withoutStructure, wrapper) => {
@@ -126,6 +134,21 @@ class Composite
             getState => ({memoize: callback => callback}),
             (equality => originalMemoize => Wrappers.Memoize(originalMemoize, equality))(this.equality)
         );
+
+        this.prettify = ({reduce, expand} = {}) => {
+            reduce = typeof reduce === 'function' ? reduce : Reduce;
+            expand = typeof expand === 'function' ? expand : Expand;
+            const r = this.reducer;
+            const m = this.middleware;
+            this.reducer = (state, action) => r(state, expand(action))
+            this.middleware = store => next => action => m(store)(action => next(reduce(action)))(action)
+            delete this.prettify
+            this.uglify = () => {
+                this.reducer = r;
+                this.middleware = m;
+                delete this.uglify;
+            }
+        }
 
         this.init = (reduxStore, init = {}) => (composite => {
             const {store, structure} = (store => store(composite)(reduxStore))(

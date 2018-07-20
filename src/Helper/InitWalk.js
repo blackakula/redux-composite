@@ -6,7 +6,7 @@ import {Defaults} from 'walk-composite';
 const InitWalk = (parameters = {}) => WalkComposite({
     mutationMethod: key => (composite, dispatch, getState, ...other) => [
         DefaultMutationMethod(key)(composite),
-        MutateMethod(dispatch, key),
+        MutateMethod(dispatch, key, composite),
         () => getState()[key],
         ...Defaults.MutationMethod(key)(...other)
     ],

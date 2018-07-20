@@ -7,13 +7,16 @@ const MemoizeWalk = (originalMemoize, parameters = {}) => Walk({
     leafCondition: memoize => typeof memoize.memoize === 'function'
         && (memoize.structure === undefined || memoize !== originalMemoize),
     keysMethod: memoize => Defaults.KeysMethod(useStructure(memoize) ? memoize.structure : memoize),
-    mutationMethod: key => (memoize, memoizeStructure, dispatch, getState, subscribe) => [
-        (useStructure(memoize) ? memoize.structure : memoize)[key],
-        (structure => structure !== undefined && structure[key] !== undefined ? structure[key] : undefined)(useStructure(memoize) ? memoizeStructure.structure : memoizeStructure),
-        MutateMethod(dispatch, key),
-        () => getState()[key],
-        listeners => subscribe({[key]: listeners})
-    ],
+    mutationMethod: key => (memoize, memoizeStructure, dispatch, getState, subscribe) => {
+        const structure = useStructure(memoize) ? memoize.structure : memoize;
+        return [
+            structure[key],
+            (structure => structure !== undefined && structure[key] !== undefined ? structure[key] : undefined)(useStructure(memoize) ? memoizeStructure.structure : memoizeStructure),
+            MutateMethod(dispatch, key, structure),
+            () => getState()[key],
+            listeners => subscribe({[key]: listeners})
+        ]
+    },
     reducerMethod: {
         add: Defaults.ReducerMethod.add,
         init: memoize => Defaults.ReducerMethod.init(useStructure(memoize) ? memoize.structure : memoize)

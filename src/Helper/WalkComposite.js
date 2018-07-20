@@ -2,7 +2,7 @@ import {Walk, Defaults} from 'walk-composite';
 import Composite from '../Composite';
 
 const WalkComposite = (parameters = {}, allowFunction = false) => Walk({
-    leafCondition: (data) => {
+    leafCondition: data => {
         const isLeaf = Defaults.LeafCondition(data);
         if (!(data instanceof Composite) && isLeaf && (!allowFunction || typeof data !== 'function')) {
             throw {

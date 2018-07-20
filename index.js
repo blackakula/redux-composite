@@ -115,9 +115,17 @@ module.exports =
 	
 	var _Memoize4 = _interopRequireDefault(_Memoize3);
 	
+	var _Reduce = __webpack_require__(/*! ./Prettify/Reduce */ 17);
+	
+	var _Reduce2 = _interopRequireDefault(_Reduce);
+	
+	var _Expand = __webpack_require__(/*! ./Prettify/Expand */ 18);
+	
+	var _Expand2 = _interopRequireDefault(_Expand);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	var Defaults = exports.Defaults = { Reducer: _Reducer2.default, Middleware: _Middleware2.default, Equality: _Equality2.default, Subscribe: _Subscribe2.default, Redux: _Redux2.default, Memoize: _Memoize2.default, Init: { Store: _Redux4.default, Memoize: _Memoize4.default } };
+	var Defaults = exports.Defaults = { Reducer: _Reducer2.default, Middleware: _Middleware2.default, Equality: _Equality2.default, Subscribe: _Subscribe2.default, Redux: _Redux2.default, Memoize: _Memoize2.default, Init: { Store: _Redux4.default, Memoize: _Memoize4.default }, Prettify: { Reduce: _Reduce2.default, Expand: _Expand2.default } };
 	var Composite = exports.Composite = function Composite(parameters) {
 	  return new _Composite2.default(parameters);
 	};
@@ -201,6 +209,14 @@ module.exports =
 	var _Memoize3 = __webpack_require__(/*! ./Memoize */ 16);
 	
 	var _Memoize4 = _interopRequireDefault(_Memoize3);
+	
+	var _Reduce = __webpack_require__(/*! ./Prettify/Reduce */ 17);
+	
+	var _Reduce2 = _interopRequireDefault(_Reduce);
+	
+	var _Expand = __webpack_require__(/*! ./Prettify/Expand */ 18);
+	
+	var _Expand2 = _interopRequireDefault(_Expand);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -302,7 +318,13 @@ module.exports =
 	    }
 	
 	    var compositeStructure = structure === undefined ? undefined : (0, _WalkComposite2.default)({}, true)(function (leaf) {
-	        return typeof leaf === 'function' ? new Composite({ reducer: leaf }) : leaf;
+	        if (typeof leaf === 'function') {
+	            return new Composite({ reducer: leaf });
+	        }
+	        if (leaf instanceof Composite && typeof leaf.uglify === 'function') {
+	            leaf.uglify();
+	        }
+	        return leaf;
 	    })(structure);
 	
 	    var injection = function injection(parameter, withStructure, withoutStructure, wrapper) {
@@ -346,14 +368,43 @@ module.exports =
 	        };
 	    }(this.equality));
 	
+	    this.prettify = function () {
+	        var _ref2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+	            reduce = _ref2.reduce,
+	            expand = _ref2.expand;
+	
+	        reduce = typeof reduce === 'function' ? reduce : _Reduce2.default;
+	        expand = typeof expand === 'function' ? expand : _Expand2.default;
+	        var r = _this.reducer;
+	        var m = _this.middleware;
+	        _this.reducer = function (state, action) {
+	            return r(state, expand(action));
+	        };
+	        _this.middleware = function (store) {
+	            return function (next) {
+	                return function (action) {
+	                    return m(store)(function (action) {
+	                        return next(reduce(action));
+	                    })(action);
+	                };
+	            };
+	        };
+	        delete _this.prettify;
+	        _this.uglify = function () {
+	            _this.reducer = r;
+	            _this.middleware = m;
+	            delete _this.uglify;
+	        };
+	    };
+	
 	    this.init = function (reduxStore) {
 	        var init = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 	        return function (composite) {
-	            var _ref2 = function (store) {
+	            var _ref3 = function (store) {
 	                return store(composite)(reduxStore);
 	            }(init !== undefined && typeof init.store === 'function' ? init.store : _Redux4.default),
-	                store = _ref2.store,
-	                structure = _ref2.structure;
+	                store = _ref3.store,
+	                structure = _ref3.structure;
 	
 	            composite.memoize = function (memoize) {
 	                return memoize(composite.memoize, store);
@@ -900,8 +951,6 @@ module.exports =
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-	
 	var ReduxAction = function ReduxAction(action) {
 	    return (typeof action === 'undefined' ? 'undefined' : _typeof(action)) === 'object' && action.type === 'COMPOSITE' ? action.composite : action;
 	};
@@ -910,9 +959,11 @@ module.exports =
 	        return callback({ type: 'COMPOSITE', composite: action });
 	    };
 	};
-	var MutateMethod = function MutateMethod(callback, key) {
+	var MutateMethod = function MutateMethod(callback, key, structure) {
 	    return function (action) {
-	        return callback(_defineProperty({}, key, action));
+	        var arg = Array.isArray(structure) ? [] : {};
+	        arg[key] = action;
+	        return callback(arg);
 	    };
 	};
 	var ActionMutateMethod = function ActionMutateMethod(action, key) {
@@ -988,7 +1039,7 @@ module.exports =
 	            var initNextMiddleware = (0, _WalkComposite2.default)({
 	                mutationMethod: function mutationMethod(key) {
 	                    return function (composite, next, middleware) {
-	                        return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _ReduxAction.MutateMethod)(next, key), (0, _DefaultMutationMethod2.default)(key)(middleware)];
+	                        return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _ReduxAction.MutateMethod)(next, key, composite), (0, _DefaultMutationMethod2.default)(key)(middleware)];
 	                    };
 	                }
 	            })(function (composite, next, middleware) {
@@ -1045,7 +1096,7 @@ module.exports =
 	                    other[_key - 3] = arguments[_key];
 	                }
 	
-	                return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _ReduxAction.MutateMethod)(dispatch, key), function () {
+	                return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _ReduxAction.MutateMethod)(dispatch, key, composite), function () {
 	                    return getState()[key];
 	                }].concat(_toConsumableArray(_walkComposite.Defaults.MutationMethod(key).apply(undefined, other)));
 	            };
@@ -1164,7 +1215,7 @@ module.exports =
 	        var structure = (0, _WalkComposite2.default)({
 	            mutationMethod: function mutationMethod(key) {
 	                return function (composite, dispatch, getState, subscribe) {
-	                    return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _ReduxAction.MutateMethod)(dispatch, key), function () {
+	                    return [(0, _DefaultMutationMethod2.default)(key)(composite), (0, _ReduxAction.MutateMethod)(dispatch, key, composite), function () {
 	                        return getState()[key];
 	                    }, function (listeners) {
 	                        return subscribe(_defineProperty({}, key, listeners));
@@ -1332,9 +1383,10 @@ module.exports =
 	        },
 	        mutationMethod: function mutationMethod(key) {
 	            return function (memoize, memoizeStructure, dispatch, getState, subscribe) {
-	                return [(useStructure(memoize) ? memoize.structure : memoize)[key], function (structure) {
+	                var structure = useStructure(memoize) ? memoize.structure : memoize;
+	                return [structure[key], function (structure) {
 	                    return structure !== undefined && structure[key] !== undefined ? structure[key] : undefined;
-	                }(useStructure(memoize) ? memoizeStructure.structure : memoizeStructure), (0, _ReduxAction.MutateMethod)(dispatch, key), function () {
+	                }(useStructure(memoize) ? memoizeStructure.structure : memoizeStructure), (0, _ReduxAction.MutateMethod)(dispatch, key, structure), function () {
 	                    return getState()[key];
 	                }, function (listeners) {
 	                    return subscribe(_defineProperty({}, key, listeners));
@@ -1390,6 +1442,146 @@ module.exports =
 	};
 	
 	exports.default = Memoize;
+
+/***/ }),
+/* 17 */
+/*!********************************!*\
+  !*** ./src/Prettify/Reduce.js ***!
+  \********************************/
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.Reduce = undefined;
+	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
+	var _walkComposite = __webpack_require__(/*! walk-composite */ 5);
+	
+	function _objectWithoutProperties(obj, keys) { var target = {}; for (var i in obj) { if (keys.indexOf(i) >= 0) continue; if (!Object.prototype.hasOwnProperty.call(obj, i)) continue; target[i] = obj[i]; } return target; }
+	
+	var Reduce = function Reduce(action) {
+	    var actions = [];
+	    var payload = undefined;
+	    if ((typeof action === 'undefined' ? 'undefined' : _typeof(action)) !== 'object' || action === null || action.type !== 'COMPOSITE' || _typeof(action.composite) !== 'object') {
+	        return action;
+	    }
+	    (0, _walkComposite.Walk)({
+	        keysMethod: function keysMethod(action, path) {
+	            var type = action.type,
+	                rest = _objectWithoutProperties(action, ['type']);
+	
+	            if (type !== undefined && (type !== 'COMPOSITE' || _typeof(rest.composite) !== 'object')) {
+	                actions.push(type + '\\' + path);
+	                if (Object.keys(rest).length !== 0) {
+	                    if (payload === undefined) {
+	                        payload = {};
+	                    }
+	                    payload[path] = rest;
+	                }
+	            }
+	            return _walkComposite.Defaults.KeysMethod(rest);
+	        },
+	        mutationMethod: function mutationMethod(key) {
+	            return function (action, path) {
+	                return [_walkComposite.Defaults.MutationMethod(key)(action)[0], action.type === 'COMPOSITE' && _typeof(action.composite) === 'object' && key === 'composite' ? path : function (key) {
+	                    return path === '' ? key : path + '\\' + key;
+	                }(Array.isArray(action) ? '[' + key + ']' : '{' + key + '}')];
+	            };
+	        }
+	    })(function () {})(action.composite, '');
+	    return { type: actions.join('\n'), payload: payload };
+	};
+	
+	exports.Reduce = Reduce;
+	exports.default = Reduce;
+
+/***/ }),
+/* 18 */
+/*!********************************!*\
+  !*** ./src/Prettify/Expand.js ***!
+  \********************************/
+/***/ (function(module, exports) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+	
+	function _toArray(arr) { return Array.isArray(arr) ? arr : Array.from(arr); }
+	
+	var Expand = exports.Expand = function Expand(action) {
+	    if ((typeof action === 'undefined' ? 'undefined' : _typeof(action)) !== 'object' || action === null || typeof action.type !== 'string') {
+	        return action;
+	    }
+	    try {
+	        var compositeChecked = undefined,
+	            composite = undefined;
+	        var actions = action.type.split('\n').map(function (a) {
+	            var _a$split = a.split('\\'),
+	                _a$split2 = _toArray(_a$split),
+	                type = _a$split2[0],
+	                path = _a$split2.slice(1);
+	
+	            if (type === undefined) {
+	                throw {
+	                    message: 'action.type is undefined - use format "ACTION_TYPE\\{key1}\\[key2]\\{key3}"',
+	                    type: type
+	                };
+	            }
+	            if (path.length === 0) {
+	                throw {
+	                    message: 'path for composite is not defined - use format "ACTION_TYPE\\{key1}\\[key2]\\{key3}"',
+	                    type: a
+	                };
+	            }
+	            var result = _extends({
+	                type: type
+	            }, function (p) {
+	                return _typeof(action.payload) === 'object' && action.payload !== null && _typeof(action.payload[p]) === 'object' && action.payload[p] !== null ? action.payload[p] : {};
+	            }(path.join('\\')));
+	            var lastChecked = true;
+	            path.reverse().map(function (item) {
+	                var checked = /^\{.*\}$/.test(item) ? true : /^\[.*\]$/.test(item) ? false : undefined;
+	                if (checked === undefined) {
+	                    throw {
+	                        message: 'path item is not in the right format: should be either {key} or [key]',
+	                        item: item
+	                    };
+	                }
+	                lastChecked = checked;
+	                checked = checked ? {} : [];
+	                checked[item.substr(1, item.length - 2)] = result;
+	                result = checked;
+	            });
+	            if (compositeChecked === undefined) {
+	                compositeChecked = lastChecked;
+	                composite = compositeChecked ? {} : [];
+	            } else if (compositeChecked !== lastChecked) {
+	                throw {
+	                    message: 'inconsistency in action paths: [] !== {}'
+	                };
+	            }
+	            composite = compositeChecked ? _extends({}, composite, result) : [].concat(_toConsumableArray(composite), _toConsumableArray(result));
+	        });
+	        return { type: 'COMPOSITE', composite: composite };
+	    } catch (e) {
+	        // console.warn('Action could not be expanded', e, action);
+	        return action;
+	    }
+	};
+	
+	exports.default = Expand;
 
 /***/ })
 /******/ ]);

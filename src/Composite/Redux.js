@@ -7,7 +7,7 @@ const Redux = compositeStructure => (dispatch, getState, subscribe) => {
     const structure = WalkComposite({
         mutationMethod: key => (composite, dispatch, getState, subscribe) => [
             DefaultMutationMethod(key)(composite),
-            MutateMethod(dispatch, key),
+            MutateMethod(dispatch, key, composite),
             () => getState()[key],
             listeners => subscribe({[key]: listeners})
         ]

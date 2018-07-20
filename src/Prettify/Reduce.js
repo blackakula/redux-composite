@@ -9,7 +9,7 @@ export const Reduce = action => {
     Walk({
         keysMethod: (action, path) => {
             const { type, ...rest } = action;
-            if (type !== undefined) {
+            if (type !== undefined && (type !== 'COMPOSITE' || typeof rest.composite !== 'object')) {
                 actions.push(type + '\\' + path);
                 if (Object.keys(rest).length !== 0) {
                     if (payload === undefined) {
@@ -22,7 +22,9 @@ export const Reduce = action => {
         },
         mutationMethod: key => (action, path) => [
             Defaults.MutationMethod(key)(action)[0],
-            (key => path === '' ? key : path + '\\' + key)(Array.isArray(action) ? `[${key}]` : `{${key}}`)
+            action.type === 'COMPOSITE' && typeof action.composite === 'object' && key === 'composite'
+                ? path
+                : (key => path === '' ? key : path + '\\' + key)(Array.isArray(action) ? `[${key}]` : `{${key}}`)
         ]
     })(() => {})(action.composite, '')
     return {type: actions.join('\n'), payload};
