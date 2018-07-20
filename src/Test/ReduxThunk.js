@@ -23,9 +23,9 @@ const test = () => {
         {toggle: false, calc: [1, 2]},
         applyMiddleware(composite.middleware)
     );
-    store.dispatch({type: 'COMPOSITE', composite: {calc: [undefined, calculatorThunkActor()]}});
+    store.dispatch({type: 'COMPOSITE', composite: {calc: [ , calculatorThunkActor()]}});
     expect(store.getState()).toEqual({toggle: false, calc: [1, 1]});
-    store.dispatch({type: 'COMPOSITE', composite: {calc: [undefined, calculatorThunkActor()]}});
+    store.dispatch({type: 'COMPOSITE', composite: {calc: [ , calculatorThunkActor()]}});
     expect(store.getState()).toEqual({toggle: false, calc: [1, 1]});
 
     const complex = Structure({

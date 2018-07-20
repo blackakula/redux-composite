@@ -1526,7 +1526,6 @@ module.exports =
 	    });
 	    // Run only one
 	    checker({ increment: 1, reducer: { toggle: false, calc: [2, 2] } }, { increment: 1, reducer: { toggle: false, calc: [1, 2] } }, {
-	        increment: undefined,
 	        reducer: {
 	            toggle: { type: 'unknown' },
 	            calc: [{ type: 'INCREMENT' }]
@@ -6117,7 +6116,7 @@ module.exports =
 	    var composite = (0, _index.Structure)({ toggle: _Reducer.toggle, calc: [(0, _index.Composite)({ reducer: _Reducer.increment, middleware: middlewareIncrementCallback }), (0, _index.Composite)({ reducer: _Reducer.calculator, middleware: middlewareCalcCallback })] });
 	    var store = (0, _redux.createStore)(composite.reducer, { toggle: false, calc: [1, 2] }, (0, _redux.applyMiddleware)(composite.middleware));
 	
-	    store.dispatch({ type: 'COMPOSITE', composite: { calc: [undefined, { type: 'INCREMENT', value: 2 }] } });
+	    store.dispatch({ type: 'COMPOSITE', composite: { calc: [, { type: 'INCREMENT', value: 2 }] } });
 	    // added 2, decreased by 5
 	    (0, _expect2.default)(store.getState()).toEqual({ toggle: false, calc: [1, -1] });
 	
@@ -7457,9 +7456,11 @@ module.exports =
 	            calcTriggers[0] += 1;
 	            incrementSum += getState();
 	        },
-	        reducer: { calc: [undefined, function () {
+	        reducer: {
+	            calc: [, function () {
 	                return calcTriggers[1] += 1;
-	            }] }
+	            }]
+	        }
 	    });
 	    complexStore.dispatch({ type: 'COMPOSITE', composite: {
 	            increment: { type: 'INCREMENT' },
@@ -7704,7 +7705,7 @@ module.exports =
 	        } });
 	    (0, _expect2.default)(custom(16, 17)).toEqual(33);
 	    dispatch({ type: 'COMPOSITE', composite: {
-	            calc: [undefined, { type: 'INCREMENT', value: 2 }]
+	            calc: [, { type: 'INCREMENT', value: 2 }]
 	        } });
 	    // not changed: calc[1] is not part of memoize functions chain
 	    (0, _expect2.default)(custom(17, 18)).toEqual(33);
@@ -7768,10 +7769,10 @@ module.exports =
 	    store.dispatch({ type: 'COMPOSITE', composite: { calc: [{ type: 'INCREMENT' }] } });
 	    (0, _expect2.default)(finalMemoize1()).toEqual(0);
 	    (0, _expect2.default)(calculated).toEqual({ total: 3, structure: { toggle: 2, calc: [2, 1] } });
-	    store.dispatch({ type: 'COMPOSITE', composite: { toggle: { type: 'TOGGLE' }, calc: [undefined, { type: 'DECREMENT', value: -5 }] } });
+	    store.dispatch({ type: 'COMPOSITE', composite: { toggle: { type: 'TOGGLE' }, calc: [, { type: 'DECREMENT', value: -5 }] } });
 	    (0, _expect2.default)(finalMemoize1()).toEqual(7);
 	    (0, _expect2.default)(calculated).toEqual({ total: 4, structure: { toggle: 3, calc: [2, 2] } });
-	    store.dispatch({ type: 'COMPOSITE', composite: { toggle: { type: 'TOGGLE' }, calc: [undefined, { type: 'DECREMENT', value: -5 }] } });
+	    store.dispatch({ type: 'COMPOSITE', composite: { toggle: { type: 'TOGGLE' }, calc: [, { type: 'DECREMENT', value: -5 }] } });
 	    (0, _expect2.default)(finalMemoize1()).toEqual(0);
 	    (0, _expect2.default)(calculated).toEqual({ total: 5, structure: { toggle: 4, calc: [2, 2] } });
 	
@@ -7942,9 +7943,9 @@ module.exports =
 	        calc: [_Reducer.increment, (0, _index.Composite)({ reducer: _Reducer.calculator, middleware: _reduxThunk2.default })]
 	    });
 	    var store = (0, _redux.createStore)(composite.reducer, { toggle: false, calc: [1, 2] }, (0, _redux.applyMiddleware)(composite.middleware));
-	    store.dispatch({ type: 'COMPOSITE', composite: { calc: [undefined, calculatorThunkActor()] } });
+	    store.dispatch({ type: 'COMPOSITE', composite: { calc: [, calculatorThunkActor()] } });
 	    (0, _expect2.default)(store.getState()).toEqual({ toggle: false, calc: [1, 1] });
-	    store.dispatch({ type: 'COMPOSITE', composite: { calc: [undefined, calculatorThunkActor()] } });
+	    store.dispatch({ type: 'COMPOSITE', composite: { calc: [, calculatorThunkActor()] } });
 	    (0, _expect2.default)(store.getState()).toEqual({ toggle: false, calc: [1, 1] });
 	
 	    var complex = (0, _index.Structure)({

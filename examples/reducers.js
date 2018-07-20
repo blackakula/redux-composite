@@ -32,7 +32,7 @@ composite3(
         type: 'COMPOSITE',
         composite: {
             toggle: {type: 'TOGGLE'},
-            child: [undefined, {type: 'INCREMENT'}]
+            child: [ , {type: 'INCREMENT'}]
         }
     }
 ); // {toggle: false, child: [1, 3]}

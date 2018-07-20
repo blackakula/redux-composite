@@ -46,7 +46,7 @@ const test = () => {
         applyMiddleware(composite.middleware)
     );
 
-    store.dispatch({type: 'COMPOSITE', composite: {calc:[undefined, {type: 'INCREMENT', value: 2}]}});
+    store.dispatch({type: 'COMPOSITE', composite: {calc:[ , {type: 'INCREMENT', value: 2}]}});
     // added 2, decreased by 5
     expect(store.getState()).toEqual({toggle: false, calc: [1, -1]});
 

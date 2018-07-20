@@ -60,7 +60,7 @@ const test2 = (memoize, dispatch) => {
         }});
     expect(custom(16, 17)).toEqual(33);
     dispatch({type: 'COMPOSITE', composite: {
-            calc: [undefined, {type: 'INCREMENT', value: 2}]
+            calc: [ , {type: 'INCREMENT', value: 2}]
         }});
     // not changed: calc[1] is not part of memoize functions chain
     expect(custom(17, 18)).toEqual(33);
@@ -121,10 +121,10 @@ const test3 = createComposite => {
     store.dispatch({type: 'COMPOSITE', composite: {calc: [{type: 'INCREMENT'}]}});
     expect(finalMemoize1()).toEqual(0);
     expect(calculated).toEqual({total: 3, structure: {toggle: 2, calc: [2, 1]}});
-    store.dispatch({type: 'COMPOSITE', composite: {toggle: {type: 'TOGGLE'}, calc: [undefined, {type: 'DECREMENT', value: -5}]}});
+    store.dispatch({type: 'COMPOSITE', composite: {toggle: {type: 'TOGGLE'}, calc: [ , {type: 'DECREMENT', value: -5}]}});
     expect(finalMemoize1()).toEqual(7);
     expect(calculated).toEqual({total: 4, structure: {toggle: 3, calc: [2, 2]}});
-    store.dispatch({type: 'COMPOSITE', composite: {toggle: {type: 'TOGGLE'}, calc: [undefined, {type: 'DECREMENT', value: -5}]}});
+    store.dispatch({type: 'COMPOSITE', composite: {toggle: {type: 'TOGGLE'}, calc: [ , {type: 'DECREMENT', value: -5}]}});
     expect(finalMemoize1()).toEqual(0);
     expect(calculated).toEqual({total: 5, structure: {toggle: 4, calc: [2, 2]}});
 

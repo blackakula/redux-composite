@@ -60,10 +60,9 @@ const test = () => {
             calcTriggers[0] += 1;
             incrementSum += getState();
         },
-        reducer: {calc: [
-            undefined,
-            () => calcTriggers[1] += 1
-        ]}
+        reducer: {
+            calc: [ , () => calcTriggers[1] += 1 ]
+        }
     });
     complexStore.dispatch({type: 'COMPOSITE', composite: {
         increment: {type: 'INCREMENT'},

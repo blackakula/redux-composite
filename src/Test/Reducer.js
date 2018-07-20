@@ -73,7 +73,6 @@ const test = () => {
         {increment: 1, reducer: {toggle: false, calc: [2, 2]}},
         {increment: 1, reducer: {toggle: false, calc: [1, 2]}},
         {
-            increment: undefined,
             reducer: {
                 toggle: {type: 'unknown'},
                 calc: [{type: 'INCREMENT'}]
