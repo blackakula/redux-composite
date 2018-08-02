@@ -35,16 +35,14 @@ const anotherMiddlewareIncrementCallback = ({dispatch, getState}) => next => act
     return result;
 };
 
+const createComposite = () => Structure({toggle, calc: [
+    Composite({reducer: increment, middleware: middlewareIncrementCallback}),
+    Composite({reducer: calculator, middleware: middlewareCalcCallback})
+]});
+
 const test = () => {
-    const composite = Structure({toggle, calc: [
-        Composite({reducer: increment, middleware: middlewareIncrementCallback}),
-        Composite({reducer: calculator, middleware: middlewareCalcCallback})
-    ]});
-    let store = createStore(
-        composite.reducer,
-        {toggle: false, calc: [1, 2]},
-        applyMiddleware(composite.middleware)
-    );
+    const composite = createComposite();
+    let store = composite.createStore()(r => r, {toggle: false, calc: [1, 2]});
 
     store.dispatch({type: 'COMPOSITE', composite: {calc:[ , {type: 'INCREMENT', value: 2}]}});
     // added 2, decreased by 5
@@ -59,13 +57,9 @@ const test = () => {
 
     const complex = Structure({
         increment: Composite({reducer: increment, middleware: middlewareIncrementCallback}),
-        reducer: composite
+        reducer: createComposite()
     });
-    let complexStore = createStore(
-        complex.reducer,
-        {increment: 1, reducer: store.getState()},
-        applyMiddleware(complex.middleware)
-    );
+    let complexStore = complex.createStore()(r => r, {increment: 1, reducer: store.getState()});
     expect(complexStore.getState().reducer).toEqual(FIXED_STATE);
     // dispatch multiple actions on children !
     complexStore.dispatch({
@@ -101,11 +95,7 @@ const test = () => {
             ]
         })
     });
-    let anotherComplexStore = createStore(
-        anotherComplex.reducer,
-        {increment: 1, reducer: {toggle: false, calc: [0, 1]}},
-        applyMiddleware(anotherComplex.middleware)
-    );
+    let anotherComplexStore = anotherComplex.createStore()(r => r, {increment: 1, reducer: {toggle: false, calc: [0, 1]}});
     anotherComplexStore.dispatch({type: 'COMPOSITE', composite: {
         increment: {type: 'INCREMENT'},
         reducer: {

@@ -12,13 +12,9 @@ const test = () => {
         ]
     });
     const composite = createComposite();
-    let store = createStore(
-        composite.reducer,
-        {toggle: false, calc: [0, 1]},
-        applyMiddleware(composite.middleware)
-    );
+    let store = composite.createStore()(r => r, {toggle: false, calc: [0, 1]});
 
-    let structure = composite.init(store).store;
+    let structure = composite.store;
 
     // check getState
     expect(structure.toggle.getState()).toEqual(false);
@@ -59,13 +55,9 @@ const test = () => {
         increment,
         reducer: createComposite()
     });
-    let complexStore = createStore(
-        complex.reducer,
-        {increment: 2, reducer: {toggle: false, calc: [0, 1]}},
-        applyMiddleware(complex.middleware)
-    );
+    let complexStore = complex.createStore()(r => r, {increment: 2, reducer: {toggle: false, calc: [0, 1]}});
 
-    structure = complex.init(complexStore).store;
+    structure = complex.store;
 
     // check getState
     expect(structure.increment.getState()).toEqual(2);

@@ -135,14 +135,13 @@ class Composite
             (equality => originalMemoize => Wrappers.Memoize(originalMemoize, equality))(this.equality)
         );
 
-        this.prettify = ({reduce, expand} = {}) => {
+        const Prettify = ({reduce, expand} = {}) => {
             reduce = typeof reduce === 'function' ? reduce : Reduce;
             expand = typeof expand === 'function' ? expand : Expand;
             const r = this.reducer;
             const m = this.middleware;
             this.reducer = (state, action) => r(state, expand(action))
             this.middleware = store => next => action => m(store)(action => next(reduce(action)))(action)
-            delete this.prettify
             this.uglify = () => {
                 this.reducer = r;
                 this.middleware = m;
@@ -150,20 +149,43 @@ class Composite
             }
         }
 
-        this.init = (reduxStore, init = {}) => (composite => {
-            const {store, structure} = (store => store(composite)(reduxStore))(
-                init !== undefined && typeof init.store === 'function' ? init.store : InitRedux
-            );
-            composite.memoize = (memoize => memoize(composite.memoize, store))(
-                init !== undefined && typeof init.memoize === 'function' ? init.memoize : InitMemoize
-            );
+        const Init = (reduxStore, initRedux, initMemoize) => composite => {
+            const {store, structure} = (store => store(composite)(reduxStore))(initRedux);
+            composite.memoize = (memoize => memoize(composite.memoize, store))(initMemoize);
             delete composite.redux;
             composite.store = structure;
             composite.getState = store.getState
             composite.dispatch = store.dispatch;
             composite.subscribe = store.subscribe;
             return composite;
-        })(this)
+        }
+
+        this.createStore = ({createStore = undefined, init = {}, prettify = {}} = {}) => (reducer, preloadedState, enhancer) => {
+            // Prettify
+            if (typeof prettify === 'object') {
+                const reduce = typeof prettify.reduce === 'function' ? prettify.reduce : Reduce;
+                const expand = typeof prettify.expand === 'function' ? prettify.expand : Expand;
+                Prettify({reduce, expand});
+            }
+
+            // Create Store
+            if (typeof createStore !== 'function') {
+                createStore = require('redux').createStore;
+            }
+            reducer = typeof reducer === 'function' ? reducer(this.reducer) : this.reducer;
+            if (typeof preloadedState === 'function' && enhancer === undefined) {
+                enhancer = preloadedState;
+                preloadedState = undefined
+            }
+            enhancer = typeof enhancer === 'function' ? enhancer(this.middleware) : require('redux').applyMiddleware(this.middleware)
+            let Store = createStore(reducer, preloadedState, enhancer);
+
+            // Init
+            const initRedux = typeof init.store === 'function' ? init.store : InitRedux
+            const initMemoize = typeof init.memoize === 'function' ? init.memoize : InitMemoize
+            Init(Store, initRedux, initMemoize)(this);
+            return Store;
+        }
     }
 }
 

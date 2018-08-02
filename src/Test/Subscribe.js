@@ -11,22 +11,20 @@ const incrementMiddleware = ({dispatch, getState}) => next => action => {
     return result;
 };
 
+const createComposite = () => Structure({
+    toggle,
+    calc: [
+        Composite({reducer: increment, middleware: incrementMiddleware}),
+        calculator
+    ]
+});
+
 const test = () => {
-    const composite = Structure({
-        toggle,
-        calc: [
-            Composite({reducer: increment, middleware: incrementMiddleware}),
-            calculator
-        ]
-    });
-    let store = createStore(
-        composite.reducer,
-        {toggle: false, calc: [0, 1]},
-        applyMiddleware(composite.middleware)
-    );
+    const composite = createComposite();
+    let store = composite.createStore()(r => r, {toggle: false, calc: [0, 1]});
     let calcTriggers = [0, 0];
     let incrementSum = 0;
-    composite.subscribe(store.dispatch, store.getState, store.subscribe)({
+    composite.subscribe({
         calc: [
             ({getState}) => {
                 calcTriggers[0] += 1;
@@ -48,14 +46,10 @@ const test = () => {
 
     const complex = Structure({
         increment,
-        reducer: composite
+        reducer: createComposite()
     });
-    let complexStore = createStore(
-        complex.reducer,
-        {increment: 2, reducer: {toggle: false, calc: [0, 1]}},
-        applyMiddleware(complex.middleware)
-    );
-    complex.subscribe(complexStore.dispatch, complexStore.getState, complexStore.subscribe)({
+    let complexStore = complex.createStore()(r => r, {increment: 2, reducer: {toggle: false, calc: [0, 1]}});
+    complex.subscribe({
         increment: ({getState}) => {
             calcTriggers[0] += 1;
             incrementSum += getState();

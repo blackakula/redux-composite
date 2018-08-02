@@ -10,35 +10,27 @@ const calculatorThunkActor = () => (dispatch, getState) => {
     }
 };
 
+const createComposite = () => Structure({
+    toggle,
+    calc: [
+        increment,
+        Composite({reducer: calculator, middleware: thunk})
+    ]
+});
+
 const test = () => {
-    const composite = Structure({
-        toggle,
-        calc: [
-            increment,
-            Composite({reducer: calculator, middleware: thunk})
-        ]
-    });
-    composite.prettify();
-    let store = createStore(
-        composite.reducer,
-        {toggle: false, calc: [1, 2]},
-        applyMiddleware(composite.middleware)
-    );
+    const composite = createComposite()
+    let store = composite.createStore()(r => r, {toggle: false, calc: [1, 2]});
     store.dispatch({type: 'COMPOSITE', composite: {calc: [ , calculatorThunkActor()]}});
     expect(store.getState()).toEqual({toggle: false, calc: [1, 1]});
-    store.dispatch({type: 'COMPOSITE', composite: {calc: [ , calculatorThunkActor()]}});
-    expect(store.getState()).toEqual({toggle: false, calc: [1, 1]});
+    composite.dispatch({type: 'COMPOSITE', composite: {calc: [ , calculatorThunkActor()]}});
+    expect(composite.getState()).toEqual({toggle: false, calc: [1, 1]});
 
     const complex = Structure({
         increment,
-        reducer: composite
+        reducer: createComposite()
     });
-    complex.prettify();
-    let complexStore = createStore(
-        complex.reducer,
-        {increment: 1, reducer: {toggle: false, calc: [1, 2]}},
-        applyMiddleware(complex.middleware)
-    );
+    let complexStore = complex.createStore()(r => r, {increment: 1, reducer: {toggle: false, calc: [1, 2]}})
     complexStore.dispatch({
         type: 'COMPOSITE',
         composite: {
@@ -52,7 +44,7 @@ const test = () => {
             }
         }
     });
-    expect(complexStore.getState()).toEqual({
+    expect(complex.getState()).toEqual({
         increment: 2,
         reducer: {
             toggle: true,
