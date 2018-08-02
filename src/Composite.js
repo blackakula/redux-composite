@@ -152,7 +152,10 @@ class Composite
         const Init = (reduxStore, initRedux, initMemoize) => composite => {
             const {store, structure} = (store => store(composite)(reduxStore))(initRedux);
             composite.memoize = (memoize => memoize(composite.memoize, store))(initMemoize);
+            delete composite.reducer;
+            delete composite.middleware;
             delete composite.redux;
+            delete composite.equality;
             composite.store = structure;
             composite.getState = store.getState
             composite.dispatch = store.dispatch;
@@ -184,6 +187,9 @@ class Composite
             const initRedux = typeof init.store === 'function' ? init.store : InitRedux
             const initMemoize = typeof init.memoize === 'function' ? init.memoize : InitMemoize
             Init(Store, initRedux, initMemoize)(this);
+
+            // Clean-up
+            delete this.createStore;
             return Store;
         }
     }

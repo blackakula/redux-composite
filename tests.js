@@ -452,7 +452,10 @@ module.exports =
 	            composite.memoize = function (memoize) {
 	                return memoize(composite.memoize, store);
 	            }(initMemoize);
+	            delete composite.reducer;
+	            delete composite.middleware;
 	            delete composite.redux;
+	            delete composite.equality;
 	            composite.store = structure;
 	            composite.getState = store.getState;
 	            composite.dispatch = store.dispatch;
@@ -494,6 +497,9 @@ module.exports =
 	            var initRedux = typeof init.store === 'function' ? init.store : _Redux4.default;
 	            var initMemoize = typeof init.memoize === 'function' ? init.memoize : _Memoize4.default;
 	            Init(Store, initRedux, initMemoize)(_this);
+	
+	            // Clean-up
+	            delete _this.createStore;
 	            return Store;
 	        };
 	    };
