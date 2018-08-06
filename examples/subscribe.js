@@ -11,18 +11,18 @@ const getHighLevelState = () => highLevelState;
 let listeners = [];
 const highLevelSubscribe = listener => listeners.push(listener);
 
-const highLevelDispatch = action => {
-    const newState = composite.reducer(highLevelState, action);
+const highLevelDispatch = (reducer => action => {
+    const newState = reducer(highLevelState, action);
     if (newState !== highLevelState) {
         highLevelState = newState;
         listeners.map(listener => listener());
     }
-};
-composite.init({
+})(composite.reducer);
+composite.createStore({createStore: () => ({
     getState: getHighLevelState,
     subscribe: highLevelSubscribe,
     dispatch: highLevelDispatch
-});
+})})();
 
 let counter = 0;
 composite.store.toggle.subscribe(({getState, dispatch}) => {

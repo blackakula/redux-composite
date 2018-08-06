@@ -38,6 +38,7 @@ composite.middleware({dispatch: highLevelDispatch, getState: getHighLevelState})
 composite.middleware({dispatch: highLevelDispatch, getState: getHighLevelState})(highLevelDispatch)({
     type: 'COMPOSITE',
     composite: {
-        toggle: {type: 'SOMETHING_ELSE'}
+        toggle: {type: 'TOGGLE'},
+        inc: {type: 'SOMETHING_ELSE'}
     }
-}); // highLevelState is {toggle: true, inc: 3}
+}); // highLevelState is {toggle: false, inc: 3}

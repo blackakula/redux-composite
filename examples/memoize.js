@@ -10,9 +10,9 @@ const composite = Structure({
     toggle: toggle,
     inc: inc
 });
-const highLevelDispatch = action => {
-    return highLevelState = composite.reducer(highLevelState, action);
-};
+const highLevelDispatch = (reducer => action => {
+    return highLevelState = reducer(highLevelState, action);
+})(composite.reducer);
 
 const experimentalFunction = () => (start => {
     // heavy calculation
@@ -20,9 +20,12 @@ const experimentalFunction = () => (start => {
     return start;
 })(new Date().getTime());
 
-const memoizeInit = composite.memoize(getHighLevelState);
-const memoizedComposite = memoizeInit.memoize(experimentalFunction);
-const memoizedToggle = memoizeInit.structure.toggle.memoize(experimentalFunction);
+composite.createStore({createStore: () => ({
+        dispatch: highLevelDispatch,
+        getState: getHighLevelState
+    })})()
+const memoizedComposite = composite.memoize({memoize: experimentalFunction}).memoize;
+const memoizedToggle = composite.memoize({structure: {toggle: experimentalFunction}}).structure.toggle;
 
 memoizedComposite();
 memoizedToggle();

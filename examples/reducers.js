@@ -15,24 +15,19 @@ composite1({toggle: true, inc: 2}, {
     }
 }); // {toggle: false, inc: 3}
 
-const composite2 = Structure({inc1: inc, inc2: inc}).reducer;
+const composite2 = (state, action) => Structure({inc1: inc, inc2: inc}).reducer(state, Defaults.Prettify.Expand(action));
 composite2({inc1: 1, inc2: 1}, {
-    type: 'COMPOSITE',
-    composite: {inc2: {type: 'INCREMENT'}}
+    type: 'INCREMENT\\{inc2}'
 }); // {inc1: 1, inc2: 2}
 
-const composite3 = Structure({
+const composite3 = (state, action) => Structure({
     toggle,
     child: Structure([inc, inc])
-}).reducer;
+}).reducer(state, Defaults.Prettify.Expand(action));
 
 composite3(
     {toggle: true, child: [1, 2]},
     {
-        type: 'COMPOSITE',
-        composite: {
-            toggle: {type: 'TOGGLE'},
-            child: [ , {type: 'INCREMENT'}]
-        }
+        type: 'TOGGLE\\{toggle}\nINCREMENT\\{child}\\[1]'
     }
 ); // {toggle: false, child: [1, 3]}
