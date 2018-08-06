@@ -1209,6 +1209,11 @@ module.exports =
 	var Subscribe = function Subscribe(compositeStructure) {
 	    return function (dispatch, getState) {
 	        return function (listeners) {
+	            if (typeof listeners === 'function') {
+	                return function () {
+	                    return listeners({ dispatch: dispatch, getState: getState });
+	                };
+	            }
 	            var initSubscribe = (0, _InitWalk2.default)()(function (composite, dispatch, getState, listener) {
 	                return composite.subscribe(dispatch, getState)(listener);
 	            })(compositeStructure, dispatch, getState, listeners);

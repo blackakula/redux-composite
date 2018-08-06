@@ -68,5 +68,16 @@ const test = () => {
     expect(complexStore.getState()).toEqual({increment: 3, reducer: {toggle: true, calc: [2, 4]}});
     expect(incrementSum).toEqual(6);
     expect(calcTriggers).toEqual([3, 2]);
+    complex.subscribe(({getState, dispatch}) => {
+        if (getState().reducer.toggle) {
+            dispatch({type: 'COMPOSITE', composite: {
+                reducer: {toggle: {type: 'TOGGLE'}}
+            }})
+        }
+    });
+    complex.dispatch({type: 'COMPOSITE', composite: {
+        increment: {type: 'INCREMENT'}
+    }});
+    expect(complexStore.getState()).toEqual({increment: 4, reducer: {toggle: false, calc: [2, 4]}});
 };
 export default test;

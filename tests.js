@@ -1254,6 +1254,11 @@ module.exports =
 	var Subscribe = function Subscribe(compositeStructure) {
 	    return function (dispatch, getState) {
 	        return function (listeners) {
+	            if (typeof listeners === 'function') {
+	                return function () {
+	                    return listeners({ dispatch: dispatch, getState: getState });
+	                };
+	            }
 	            var initSubscribe = (0, _InitWalk2.default)()(function (composite, dispatch, getState, listener) {
 	                return composite.subscribe(dispatch, getState)(listener);
 	            })(compositeStructure, dispatch, getState, listeners);
@@ -7723,6 +7728,20 @@ module.exports =
 	    (0, _expect2.default)(complexStore.getState()).toEqual({ increment: 3, reducer: { toggle: true, calc: [2, 4] } });
 	    (0, _expect2.default)(incrementSum).toEqual(6);
 	    (0, _expect2.default)(calcTriggers).toEqual([3, 2]);
+	    complex.subscribe(function (_ref4) {
+	        var getState = _ref4.getState,
+	            dispatch = _ref4.dispatch;
+	
+	        if (getState().reducer.toggle) {
+	            dispatch({ type: 'COMPOSITE', composite: {
+	                    reducer: { toggle: { type: 'TOGGLE' } }
+	                } });
+	        }
+	    });
+	    complex.dispatch({ type: 'COMPOSITE', composite: {
+	            increment: { type: 'INCREMENT' }
+	        } });
+	    (0, _expect2.default)(complexStore.getState()).toEqual({ increment: 4, reducer: { toggle: false, calc: [2, 4] } });
 	};
 	exports.default = test;
 
