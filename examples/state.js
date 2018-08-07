@@ -1,17 +1,14 @@
 import {Structure} from 'redux-composite';
 
 let highLevelState = {toggle: false, inc: [1, 2]};
-const getHighLevelState = () => highLevelState;
-const dummyReducer = () => {};
+const createStore = () => ({getState: () => highLevelState});
 
 const composite1 = Structure({
-    toggle: dummyReducer,
-    inc: [dummyReducer, dummyReducer]
+    toggle: () => {},
+    inc: [() => {}, () => {}]
 });
 
-composite1.createStore({createStore: () => ({
-    getState: getHighLevelState
-})})();
+composite1.createStore({createStore})();
 const store1 = composite1.store;
 
 store1.toggle.getState(); // false
@@ -19,13 +16,11 @@ store1.inc[0].getState(); // 1
 store1.inc[1].getState(); // 2
 
 const composite2 = Structure({
-    toggle: dummyReducer,
-    inc: Structure([dummyReducer, dummyReducer])
+    toggle: () => {},
+    inc: Structure([() => {}, () => {}])
 });
 
-composite2.createStore({createStore: () => ({
-    getState: getHighLevelState
-})})();
+composite2.createStore({createStore})();
 const store2 = composite2.store;
 
 store2.toggle.getState(); // false

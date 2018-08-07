@@ -6,7 +6,7 @@ Composing high-level [Labelled transition system](https://en.wikipedia.org/wiki/
 The library allows low-level system implementations being independent from the high-level system structure.
 This way low-level systems could be re-usable in different high-level systems.
 
-## Problem statement
+## Motivation
 
 Imagine, we have a simple reducer
 ```
@@ -51,7 +51,7 @@ And here how it looks in action:
 
 
 - buttons do not know about global state structure
-- original reducer and middleware is used for each button
+- original reducer and middleware are used for each button
 
 ## Documentation
 

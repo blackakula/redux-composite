@@ -1,5 +1,10 @@
 # Redux Composite
-# TODO: Draft version
+
+## State
+- [Documentation](state.md)
+- [Example](../examples/state.js)
+
+# TODO: Draft version below
 
 Composing high-level [Labelled transition system](https://en.wikipedia.org/wiki/Transition_system) from small ones.
 
