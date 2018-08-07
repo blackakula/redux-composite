@@ -47,9 +47,12 @@ const store2 = composite2.store;
 
 store2.toggle.getState(); // false for toggle state
 store2.inc.store.getState(); // [1, 2] for inc state
-store2.inc.structure[0].getState(); // 1 first sub-state of inc
-store2.inc.structure[1].getState(); // 2 second sub-state
+store2.inc.structure[0].getState(); // 1 for the first sub-state of inc
+store2.inc.structure[1].getState(); // 2 for the second sub-state of inc
+composite2.getState(); // {toggle: false, inc: [1, 2]} for the global state
 ```
 This way we have `getState()` methods for each sub-state... and even sub-sub-states and so on.
 
 Full example could be found in [examples/state.js](../examples/state.js)
+
+Read next: [Dispatch](dispatch.md)

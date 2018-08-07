@@ -27,6 +27,7 @@ store2.toggle.getState(); // false
 store2.inc.store.getState(); // [1, 2]
 store2.inc.structure[0].getState(); // 1
 store2.inc.structure[1].getState(); // 2
+composite2.getState(); // {toggle: false, inc: [1, 2]}
 highLevelState.inc[0] = 3;
 store2.inc.structure[0].getState(); // 3
 composite2.getState(); // {toggle: false, inc: [3, 2]}
