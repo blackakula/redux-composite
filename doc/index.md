@@ -8,6 +8,14 @@
 - [Documentation](dispatch.md)
 - [Example](../examples/dispatch.js)
 
+## Subscribe
+- [Documentation](subscribe.md)
+- [Example](../examples/subscribe.md)
+
+## Demo
+[https://github.com/blackakula/redux-composite-demo/](https://github.com/blackakula/redux-composite-demo/)
+
+
 # TODO: Draft version below
 
 Composing high-level [Labelled transition system](https://en.wikipedia.org/wiki/Transition_system) from small ones.

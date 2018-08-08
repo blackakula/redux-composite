@@ -53,6 +53,9 @@ And here how it looks in action:
 - buttons do not know about global state structure
 - original reducer and middleware are used for each button
 
+## Demo
+[https://github.com/blackakula/redux-composite-demo/](https://github.com/blackakula/redux-composite-demo/)
+
 ## Documentation
 
 See [full documentation here](doc/index.md)

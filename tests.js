@@ -7641,8 +7641,6 @@ module.exports =
 	
 	var _Reducer = __webpack_require__(/*! ./Reducer */ 41);
 	
-	var _redux = __webpack_require__(/*! redux */ 19);
-	
 	var _expect = __webpack_require__(/*! expect */ 42);
 	
 	var _expect2 = _interopRequireDefault(_expect);

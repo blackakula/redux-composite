@@ -53,8 +53,9 @@ const highLevelDispatch2 = (reducer => action => {
 })(composite2.reducer);
 const createStore2 = () => ({dispatch: highLevelDispatch2})
 ```
+
 Notice, that `inc` is not simply an array anymore, but structure of the array.
-Than the `inc` property of store would be devided into `store` to access store methods (like `dispatch()`) and `structure` to access internal state of sub-structure:
+Than the `inc` property of store would be devided into `store` to access store methods (like `dispatch()`) and `structure` to access internal store of sub-structure:
 ```
 composite2.createStore({createStore: createStore2})()
 const store2 = composite2.store;

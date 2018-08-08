@@ -1,6 +1,5 @@
 import {Composite, Structure} from '../index';
 import {calculator, increment, toggle} from './Reducer';
-import {createStore, applyMiddleware} from 'redux';
 import expect from 'expect';
 
 const incrementMiddleware = ({dispatch, getState}) => next => action => {
