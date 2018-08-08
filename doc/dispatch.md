@@ -6,6 +6,8 @@ Let's say, we have 3 low-level states:
 - boolean `toggle` `state1`
 - array of 2 number states (`state2` and `state3`)
 
+And our task is to aggregate them in high-level state: `{toggle: state1, inc: [state2, state3]}`.
+
 Define first our low-level reducers and the high-level state structure:
 ```
 const toggle = (state, action) => state === undefined ? false : (action.type === 'TOGGLE' ? !state : state);
@@ -20,6 +22,7 @@ const composite1 = Structure({
     inc: [inc, inc]
 });
 ```
+
 Now we can define our high-level `dispatch()` method returned by original `createStore()` (like `Redux`):
 ```
 const highLevelDispatch1 = (reducer => action => {
@@ -29,7 +32,7 @@ const highLevelDispatch1 = (reducer => action => {
 const createStore1 = () => ({dispatch: highLevelDispatch1})
 ```
 
-Ok, preconditions are set. And then after initializing the composite, we receive needed store methods for each low-level state:
+Ok, preconditions are set. And then after initializing the composite, we receive needed store `dispatch()` method for each low-level state:
 ```
 composite1.createStore({createStore: createStore1})()
 const store1 = composite1.store;
@@ -66,3 +69,5 @@ store2.inc.structure[0].dispatch({type: 'INCREMENT'}); // highLevelState is {tog
 This way we have `dispatch()` methods for each sub-state... and even sub-sub-states and so on.
 
 Full example could be found in [examples/dispatch.js](../examples/dispatch.js)
+
+Read next: [Subscribe](subscribe.md)

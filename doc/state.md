@@ -22,7 +22,7 @@ const composite1 = Structure({
 });
 ```
 
-And then after initializing the composite, we receive needed store methods for each low-level state:
+And then after initializing the composite, we receive needed store `getState()` method for each low-level state:
 ```
 composite1.createStore({createStore})();
 const store1 = composite1.store;

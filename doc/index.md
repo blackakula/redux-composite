@@ -4,6 +4,10 @@
 - [Documentation](state.md)
 - [Example](../examples/state.js)
 
+## Dispatch
+- [Documentation](dispatch.md)
+- [Example](../examples/dispatch.js)
+
 # TODO: Draft version below
 
 Composing high-level [Labelled transition system](https://en.wikipedia.org/wiki/Transition_system) from small ones.
