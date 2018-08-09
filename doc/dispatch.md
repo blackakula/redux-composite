@@ -51,7 +51,7 @@ const composite2 = Structure({
 const highLevelDispatch2 = (reducer => action => {
     return highLevelState = reducer(highLevelState, action);
 })(composite2.reducer);
-const createStore2 = () => ({dispatch: highLevelDispatch2})
+const createStore2 = () => ({dispatch: highLevelDispatch2});
 ```
 
 Notice, that `inc` is not simply an array anymore, but structure of the array.

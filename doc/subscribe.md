@@ -123,3 +123,5 @@ And, as you can see, each `subscribe()` method returns `unsubscribe()` (if your 
 This way we have `subscribe()` methods for each sub-state... and even sub-sub-states and so on.
 
 Full example could be found in [examples/subscribe.js](../examples/subscribe.js)
+
+Read next: [Memoize](memoize.md)

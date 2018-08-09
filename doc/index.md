@@ -12,6 +12,10 @@
 - [Documentation](subscribe.md)
 - [Example](../examples/subscribe.md)
 
+## Memoize
+- [Documentation](memoize.md)
+- [Example](../examples/memoize.md)
+
 ## Demo
 [https://github.com/blackakula/redux-composite-demo/](https://github.com/blackakula/redux-composite-demo/)
 
