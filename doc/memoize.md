@@ -146,3 +146,5 @@ memoized2.structure.inc.memoize(); // 1 - function was re-calculated and returne
 This way we can `memoize()` functions for each sub-state... and even sub-sub-states and so on.
 
 Full example could be found in [examples/memoize.js](../examples/memoize.js)
+
+Read next: [Composite](composite.md)

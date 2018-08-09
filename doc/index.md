@@ -16,6 +16,9 @@
 - [Documentation](memoize.md)
 - [Example](../examples/memoize.md)
 
+## Composite
+- [Documentation](composite.md)
+
 ## Demo
 [https://github.com/blackakula/redux-composite-demo/](https://github.com/blackakula/redux-composite-demo/)
 
