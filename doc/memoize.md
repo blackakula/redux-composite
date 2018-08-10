@@ -3,7 +3,7 @@
 > In computing, **memoization** or **memoisation** is an optimization technique used primarily to speed up computer programs by storing the results of expensive function calls and returning the cached result when the same inputs occur again.
 
 Let's create function with closure, that always change it's state, when called:
-```
+```js
 const counter = () => {
     let counter = 0;
     return () => counter++;
@@ -11,7 +11,7 @@ const counter = () => {
 ```
 
 And again, we have 2 simple reducers:
-```
+```js
 const toggle = (state, action) => state === undefined ? false : (action.type === 'TOGGLE' ? !state : state);
 const inc = (state, action) => state === undefined ? 0 : (action.type === 'INCREMENT' ? state + 1 : state);
 ```
@@ -21,7 +21,7 @@ So, if we dispatch something like `dispatch({type: 'TOGGLE'})`, the `counter()` 
 if we `dispatch({type: 'UNKNOWN'})`, the `counter()` will return previous value.
 
 Ok, as usual, let's create high-level state with boolean `toggle` state and 2 number states in `inc`:
-```
+```js
 let highLevelState = {toggle: false, inc: [1, 2]};
 
 const composite1 = Structure({
@@ -41,7 +41,7 @@ const createStore1 = () => ({
 
 Now we can initialize the global store and create memoized versions of `counter()`,
 using `structure` for sub-states and memoize for composite:
-```
+```js
 composite1.createStore({createStore: createStore1})();
 
 const memoized1 = composite1.memoize({
@@ -54,7 +54,7 @@ const memoized1 = composite1.memoize({
 ```
 
 Let's confirm, that our functions are memoized and will always return the same value, unless state change:
-```
+```js
 memoized1.memoize(); // 0 - counter triggered first time for the global state
 memoized1.structure.toggle(); // 0 - counter triggered first time for the toggle
 memoized1.structure.inc[0](); // 0 - counter triggered first time for the first state of inc
@@ -66,7 +66,7 @@ memoized1.structure.inc[1](); // still 0 - counter was memoized for the second s
 ```
 
 Let's change some sub-states and check results of our memoized functions
-```
+```js
 composite1.dispatch({type: 'COMPOSITE', composite: {
     toggle: {type: 'TOGGLE'},
     inc: [, {type: 'INCREMENT'}]
@@ -79,7 +79,7 @@ memoized1.structure.inc[1](); // 1 - counter triggered, because the second state
 ```
 
 What if our sub-states are already complex and have internal structure inside? For example:
-```
+```js
 highLevelState = {toggle: false, inc: [1, 2]};
 const composite2 = Structure({
     toggle,
@@ -97,7 +97,7 @@ const createStore2 = () => ({
 
 Notice, that `inc` is not simply an array anymore, but structure of the array.
 Than the `inc` property of store would be devided into `memoize` for the function of inc state and `structure` to access internal memoization of sub-structure:
-```
+```js
 composite2.createStore({createStore: createStore2})();
 const memoized2 = composite2.memoize({
     memoize: ({getState}) => getState().toggle ? getState().inc[1] : getState().inc[0],
@@ -115,7 +115,7 @@ As you can see, we defined a bit more complicated functions -
 memoize functions of complex states receive the memoized functions of the internal `structure`
 as long as store methods like `getState()`.
 Let's trigger memoized functions two times to check they're memoized.
-```
+```js
 memoized2.memoize(); // 1 - toggle is false, so we returned first state of inc
 memoized2.structure.toggle(); // 0 - counter triggered first time for the toggle
 memoized2.structure.inc.structure[0](); // 0 - counter triggered first time for the first state of inc
@@ -130,7 +130,7 @@ memoized2.structure.inc.memoize(); // still 0 - inc function result was also mem
 ```
 
 Let's change some sub-states and check results of our memoized functions
-```
+```js
 composite2.dispatch({type: 'COMPOSITE', composite: {
     toggle: {type: 'TOGGLE'},
     inc: [, {type: 'INCREMENT'}]

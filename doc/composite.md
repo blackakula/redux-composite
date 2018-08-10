@@ -44,7 +44,7 @@ Otherwise, equality check may fail - and other features (memoize, subscribe) may
 Default: `() => next => action => next(action)`
 
 You can inject any middleware, that follows interface:
-```javascript
+```js
 type Middleware = ({dispatch: (action: Action) => Action, getState: () => State}): ((action: Action) => Action).
 ```
 
@@ -60,7 +60,7 @@ If you have more complex equality check between previous and next state, inject 
 Default: `Wrappers.Subscribe((dispatch, getState) => listener => () => listener({dispatch, getState}), equality)`
 
 If you want additional custom behavior on all subscribed listeners to you low-level state changes, inject it using this interface:
-```javascript
+```js
 type Subscribe = (dispatch: (action: Action) => Action, getState: () => State): (Function => () => any)
 ```
 
@@ -71,7 +71,7 @@ So, you may also want to wrap your subscribe injection with `Wrappers.Subscribe`
 #### Redux
 
 Default:
-```javascript
+```js
 (dispatch, getState, subscribe) => ({
     redux: {dispatch, getState, subscribe}
 })
@@ -79,7 +79,7 @@ Default:
 
 By default the library provides in `redux` property the same low-level methods, as it was transformed from the high-level ones.
 You can implement your own wrappers on transformed methods using the interface:
-```javascript
+```js
 type Redux = (
     dispatch: (action: Action) => Action,
     getState: () => State,

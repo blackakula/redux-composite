@@ -10,12 +10,12 @@ And our task is to aggregate them in high-level state: `{toggle: state1, inc: [s
 Each of low-level states wants to have its own `getState()` method (like [selectors](https://github.com/reduxjs/reselect)?), but the `Redux` provides us only one global `getState()`.
 
 Let's say we have global state object with the high-level `getState()` method returned by original `createStore()` (like `Redux`):
-```
+```js
 let highLevelState = {toggle: false, inc: [1, 2]};
 const createStore = () => ({getState: () => highLevelState});
 ```
 According to design our composite structure would be:
-```
+```js
 const composite1 = Structure({
     toggle: () => {}, // reducers are dummy, because we don't use them
     inc: [() => {}, () => {}]
@@ -23,7 +23,7 @@ const composite1 = Structure({
 ```
 
 And then after initializing the composite, we receive needed store `getState()` method for each low-level state:
-```
+```js
 composite1.createStore({createStore})();
 const store1 = composite1.store;
 
@@ -33,7 +33,7 @@ store1.inc[1].getState(); // 2 for state3
 ```
 
 What if our sub-states are already complex and have internal structure inside? For example:
-```
+```js
 const composite2 = Structure({
     toggle: () => {},
     inc: Structure([() => {}, () => {}])
@@ -41,7 +41,7 @@ const composite2 = Structure({
 ```
 Notice, that `inc` is not simply an array anymore, but structure of the array.
 Than the `inc` property of store would be devided into `store` to access store methods (like `getState()`) and `structure` to access internal store of sub-structure:
-```
+```js
 composite2.createStore({createStore})();
 const store2 = composite2.store;
 

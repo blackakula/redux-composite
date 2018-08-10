@@ -9,14 +9,14 @@ Let's say, we have 3 low-level states:
 And our task is to aggregate them in high-level state: `{toggle: state1, inc: [state2, state3]}`.
 
 Define first our low-level reducers and the high-level state structure:
-```
+```js
 const toggle = (state, action) => state === undefined ? false : (action.type === 'TOGGLE' ? !state : state);
 const inc = (state, action) => state === undefined ? 0 : (action.type === 'INCREMENT' ? state + 1 : state);
 let highLevelState = {toggle: false, inc: [1, 2]};
 ```
 
 According to design our composite structure would be:
-```
+```js
 const composite1 = Structure({
     toggle,
     inc: [inc, inc]
@@ -24,7 +24,7 @@ const composite1 = Structure({
 ```
 
 Having the array of listeners, now we can define our high-level `dispatch()` method returned by original `createStore()` (like `Redux`):
-```
+```js
 let listeners = [];
 
 const highLevelDispatch1 = (reducer => action => {
@@ -46,7 +46,7 @@ const createStore1 = () => ({
 ```
 
 Ok, preconditions are set. And then after initializing the composite, we receive needed store `subscribe()` method for each low-level state:
-```
+```js
 composite1.createStore({createStore: createStore1})();
 composite1.store.toggle.subscribe(({getState}) => {
     if (getState()) {
@@ -56,7 +56,7 @@ composite1.store.toggle.subscribe(({getState}) => {
 ```
 
 You can also subscribe from the top level to any low-level state change:
-```
+```js
 composite1.subscribe({
     toggle: ({getState, dispatch}) => {
         if (getState()) {
@@ -67,7 +67,7 @@ composite1.subscribe({
 ```
 
 So, what will happen if we dispatch `TOGGLE` action type:
-```
+```js
 composite1.store.toggle.dispatch({type: 'TOGGLE'});
 // highLevelState is {toggle: false, inc: [1, 3]}
 ```
@@ -78,7 +78,7 @@ And then second subscriber triggered, because `state1` is `true` - it dispatched
 That's how `state1` become `false` again.
 
 What if our sub-states are already complex and have internal structure inside? For example:
-```
+```js
 highLevelState = {toggle: false, inc: [1, 2]};
 const composite2 = Structure({
     toggle,
@@ -106,7 +106,7 @@ const createStore2 = () => ({
 
 Notice, that `inc` is not simply an array anymore, but structure of the array.
 Than the `inc` property of store would be devided into `store` to access store methods (like `subscribe()`) and `structure` to access internal store of sub-structure:
-```
+```js
 composite2.createStore({createStore: createStore2})();
 
 const unsubscribe = composite2.store.inc.store.subscribe(() => composite2.store.toggle.dispatch({type: 'TOGGLE'}));

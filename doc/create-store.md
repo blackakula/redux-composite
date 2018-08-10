@@ -1,7 +1,7 @@
 # createStore
 
 Usually, creating composite store looks like this:
-```
+```js
 const composite = Structure(structure);
 composite.createStore()();
 ```
