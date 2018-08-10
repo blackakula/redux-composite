@@ -58,4 +58,24 @@ And here how it looks in action:
 
 ## Documentation
 
-See [full documentation here](doc/index.md)
+## State
+- [Documentation](doc/state.md)
+- [Example](examples/state.js)
+
+## Dispatch
+- [Documentation](doc/dispatch.md)
+- [Example](examples/dispatch.js)
+
+## Subscribe
+- [Documentation](doc/subscribe.md)
+- [Example](examples/subscribe.md)
+
+## Memoize
+- [Documentation](doc/memoize.md)
+- [Example](examples/memoize.md)
+
+## Composite
+- [Documentation](doc/composite.md)
+
+## createStore
+- [Documentation](doc/create-store.md)

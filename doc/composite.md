@@ -3,8 +3,8 @@
 For low-level system the expression `Composite({reducer})` is the same as just `reducer`,
 because high-level composite resolves low-level reducers to `Composite` objects.
 
-High-level composite object is also `Composite` object,
-because `Structure(data)` is identical to `Composite({structure: data})`.
+High-level composite object is also instance of `Composite`.
+Also keep in mind, that `Structure(data)` is identical to `Composite({structure: data})`.
 
 Either `reducer` or `structure` should be provided to `Composite` constructor, otherwise you'll receive an exception.
 
@@ -155,3 +155,5 @@ So, you may also want to wrap your memoize injection with `Wrappers.Memoize` the
 > If equality is not provided, default equality will be used
 
 Interface: `(structure: mixed): Memoize`
+
+Read next: [createStore](create-store.md)

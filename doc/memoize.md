@@ -122,7 +122,7 @@ memoized2.structure.inc.structure[0](); // 0 - counter triggered first time for 
 memoized2.structure.inc.structure[1](); // 0 - counter triggered first time for the second state of inc
 memoized2.structure.inc.memoize(); // 0 - both counters of first and second inc states are 0 as we see above
 
-memoized2.memoize(); // still 1 - toggle is still false
+memoized2.memoize(); // still 1 - memoized value, state didn't change
 memoized2.structure.toggle(); // still 0 - counter was memoized for the toggle
 memoized2.structure.inc.structure[0](); // still 0 - counter was memoized for the first state of inc
 memoized2.structure.inc.structure[1](); // still 0 - counter was memoized for the second state of inc

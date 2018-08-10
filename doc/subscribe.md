@@ -115,8 +115,8 @@ composite2.store.inc.structure[1].dispatch({type: 'INCREMENT'});
 unsubscribe();
 ```
 
-When we've dispatched `INCREMENT` for the `state3`, `inc` state changed - that's why listenered was triggered.
-The listener dispatched `TOGGLE` - and the `state1` become `true`.
+When we've dispatched `INCREMENT` for the `state3`, `inc` state changed - that's why the listener was triggered.
+The listener dispatched `TOGGLE` - and the `state1` became `true`.
 
 And, as you can see, each `subscribe()` method returns `unsubscribe()` (if your original `subscribe()` method returns `unsubscribe()` in `createStore()` as in `Redux`)
 
