@@ -9,7 +9,8 @@ This way low-level systems could be re-usable in different high-level systems.
 ## Motivation
 
 Imagine, we have a simple reducer
-```
+
+```js
 const Reducer = (state, action) => {
     if (state === undefined) {
         return {clicked: false};
@@ -38,7 +39,8 @@ Modifying reducers and middlewares may not be good solution. It could be package
 Within `Redux Composite` you simply have composite state-manager like this: `Structure([Reducer, Reducer])`.
 
 Or if with `Middleware`, we define it like:
-```
+
+```js
 Structure([
     Composite({reducer: Reducer, middleware: Middleware}),
     Composite({reducer: Reducer, middleware: Middleware})
