@@ -44,7 +44,11 @@ export const Expand = action => {
                     message: 'inconsistency in action paths: [] !== {}'
                 }
             }
-            composite = compositeChecked ? {...composite, ...result} : [...composite, ...result];
+            if (compositeChecked) {
+                composite = {...composite, ...result};
+            } else {
+                result.map((value, i) => composite[i] = value);
+            }
         })
         return {type: 'COMPOSITE', composite};
     } catch (e) {
