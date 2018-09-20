@@ -1413,6 +1413,12 @@ module.exports =
 	        },
 	        walkMethod: function walkMethod(parameters) {
 	            return WalkRedux(originalStore, parameters);
+	        },
+	        reducerMethod: {
+	            add: _walkComposite.Defaults.ReducerMethod.add,
+	            init: function init(node) {
+	                return _walkComposite.Defaults.ReducerMethod.init(useStructure(node) ? node.structure : node);
+	            }
 	        }
 	    }, parameters));
 	};

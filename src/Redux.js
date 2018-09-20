@@ -8,6 +8,10 @@ const WalkRedux = (originalStore, parameters = {}) => Walk({
     keysMethod: node => Defaults.KeysMethod(useStructure(node) ? node.structure : node),
     mutationMethod: key => node => [(useStructure(node) ? node.structure : node)[key]],
     walkMethod: parameters => WalkRedux(originalStore, parameters),
+    reducerMethod: {
+        add: Defaults.ReducerMethod.add,
+        init: node => Defaults.ReducerMethod.init(useStructure(node) ? node.structure : node)
+    },
     ...parameters
 })
 
